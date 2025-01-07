@@ -10,7 +10,7 @@ import streamlit as st
 
 load_dotenv()
 
-groq_api_key="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"
+groq_api_key=os.getenv("GROQ_API_KEY")
 model=ChatGroq(model="llama-3.3-70b-versatile",groq_api_key=groq_api_key)
 
 # 1. Create prompt template
