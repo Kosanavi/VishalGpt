@@ -7,10 +7,12 @@ from langserve import add_routes
 from dotenv import load_dotenv
 import streamlit as st
 
+# Access secrets
+groq_api_key = st.secrets["GROQ_API_KEY"]
 
-load_dotenv()
+#load_dotenv()
 
-groq_api_key=os.getenv("GROQ_API_KEY")
+#groq_api_key=os.getenv("GROQ_API_KEY")
 model=ChatGroq(model="llama-3.3-70b-versatile",groq_api_key=groq_api_key)
 
 # 1. Create prompt template
