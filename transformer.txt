@@ -1,0 +1,670 @@
+\chapter{A novel hybrid wind speed forecasting using ICEEMDAN and Transformer model} \label{sec:chapter3}
+
+\fancyhead[LE,LO]{\textit{\chaptername \ \thechapter : WSF using ICEEMDAN-Transformer model}}
+%\fancyhead[RE,LO]{Guides and tutorials}
+\fancyfoot[LE,LO]{\textit{NIT Andhra Pradesh}}
+\fancyfoot[CE,CO]{\thepage}
+\fancyfoot[RE,RO]{\textit{Dept.Electrical Engg.}}
+
+\label{sec:2}
+This chapter proposes a novel hybrid deep learning architecture for wind speed forecasting (WSF). The proposed hybrid model is developed using the improved complete ensemble empirical mode decomposition with adaptive noise (ICEEMDAN) decomposition method for THE denoising wind speed data, and transformer network (TRA) for the WSF (ICEEMDAN-TRA). Wind speed data from two wind farms located in Block Island and the Gulf Coast have been used to validate the effectiveness of the proposed hybrid model. To investigate the performance of proposed hybrid model in WSF, six individual WSF models and six hybrid WSF models are employed for comparative analysis. 
+
+
+\section{Introduction}
+The difficulty IN choosing suitable models and feature extraction techniques, which have a direct impact on prediction efficacy and accuracy, makes WSF extremely difficult. 
+In recent years, AI-based methods have proliferated in the field of short-term WSF. In comparison to the conventional AR-type models, these approaches have significantly increased prediction accuracy and are adaptable to a variety of circumstances. The most often used methods include SVM, ELM, Kalman filter, and several ANN types. The ANN-based models stand out among them as the best option since they are better able to adapt to real-field applications and can learn knowledge directly from its wind history dataset without the requirement for any prior knowledge \cite{t_11}. However, as the ANN gets deeper, this configuration could lead to an exorbitant training cost. Yet another significant flaw of ANNs is the lack of connections between the neurons within the same layer. As a result, the basic ANNs are unable to fully utilize the data offered by the input time steps, thus it prevents achieving better prediction accuracy in time series forecasting problems. CNNs are an alternative to ANNs. CNNs excel at identifying local connections. The prediction procedure has been carried out by the authors of \cite{t_13} by supplying the one-dimensional training dataset. However, the framework of such a CNN-based model appears to be too intricate for the current issue. As a result, RNNs are now thought to be the most suitable design for issues involving sequence modeling. RNN aligns well with the continuity of time for WSF. While RNN-based models are widely favored, they often struggle to effectively model the complex relationships in spatio-temporal that are crucial for accurately predicting wind speed patterns. Their limited receptive field, susceptibility to getting trapped in local minima during training, and long training times due to the dynamic nature of wind speed further hinder their effectiveness. These limitations prevent RNNs from fully modeling the complexities of wind speed dynamics, resulting in suboptimal forecasting performance. Models based on attention mechanisms have also been used to improve WSF performance. Thus, the transformer model with the attention mechanism HAS been developed for addressing the long term dependencies \cite{t_20} more effectively. In \cite{t_att}, an attention based RNN is proposed for the wind power prediction. The authors of this article discussed the benefits of the attention mechanism and how it aids in the capture of temporal and spatial patterns from raw input data. In \cite{t_CA}, at the dense layer of stacked CNN, the authors used the channel attention (CA) mechanism for WSF. This CA module improves system performance significantly by repressing non-useful data obtained from each convolution block.
+
+As wind speed data is inherintly noisy, using actual data to create a forecasting model would lead to a significant level of inaccuracy \cite{t_21,t_22}. The studies show that denoising of wind speed data helps to decrease non-stationarity in prediction results. Signal analysis is increasingly used to deconstruct and recreate denoised data for the WSF models \cite{t_23}. Members of the EMD family, such as EEMD, CEEMD, CEEMDAN, and ICEEMDAN, are more commonly used in signal decomposition methods. The main contributions of this research work are as follows:
+\begin{itemize}
+\item A hybrid deep learning model is proposed for WSF which uses ICEEMDAN decomposition method for denoising the wind speed data, and TRA model for the WSF.
+\item The ICEEMDAN method is developed for the decomposition because it reduces the number of trials while overcoming the problems that the CEEMDAN algorithm have such as mode-mixing, frequency aliasing, and residual noise.
+\item As the WSF models have a number of significant problems, including long training times, poor interpretation of complex and dynamic wind speed characteristics, limited receptive field, the transformer network is developed for the WSF. It has a parallelized input structure, which enhances the model training, and ability to interpret more asynchronous relationships between dynamic and complex wind data sequences for the WSF.
+\item The proposed hybrid model is evaluated using four time horizons: 5-min, 15-min, 30-min, 1-hour with two test experimental studies. The results of the two experiments revealed that the proposed hybrid model achieved the best results for WSF with a significant degree of improvement in all time horizons.
+\end{itemize}
+
+This chapter is structured as follows: Section 2 provides a demonstration of the operational principles of the hybrid ICEEMDAN-TRA methodology proposed. Section 3 presents the experimental results using two case studies and evaluation conducted. Section 4 presents the conclusions of this research work.
+
+\begin{figure}
+\centerline{\includegraphics[width=\columnwidth]{Figures/transformer.png}}
+\caption{Framework of the proposed ICEEMDAN-TRA model}
+\label{fig tra1}
+\end{figure}
+
+
+\section{Proposed methodology}
+The proposed methodology is divided into two parts: (A) Data decomposition using ICEEMDAN method, (B) WSF using TRA model. The subsections demonstrate each component of the proposed ICEEMDAN-TRA model. Figure \ref{fig tra1} shows the design of the proposed WSF model.
+
+\subsection{ICEEMDAN method for the wind speed data decomposition}
+The wind speed sequences are highly complex and unstable, and significant noise in the raw data affects prediction performance. Therefore, wind speed data must be decomposed to generate noiseless data. The input data is processed using the ICEEMDAN method to produce the denoised wind speed signal which is passed as the input to the predictor model. The description of the ICEEMDAN method is as follows:
+
+\subsubsection{Empirical mode decomposition}
+A signal processing technique called as Empirical mode decomposition (EMD) is specifically designed for decomposing non-stationary and nonlinear signals into a set of oscillatory modes, referred to as intrinsic mode function (IMFs) \cite{a22}. This method is based on the notion that any complex signal can be expressed as the sum of several oscillatory components, each of which represents a distinct time scale. The core principle of EMD is that it decomposes the signal by extracting these modes adaptively, rather than using fixed basis functions like Fourier or wavelet transforms.
+The following steps outline the standard EMD procedure:
+\begin{enumerate}
+    \item \textbf{Identify local extrema}: 
+    The first step in the EMD algorithm is to identify the local extrema  of the signal \( x(t) \). These are the points where the signal changes direction. To do this, the signal is scanned for points where the signal crosses a local maximum or minimum between two successive zero crossings.
+    
+    \item \textbf{Upper envelope construction}:
+    Once the local maxima are identified, they are joined using a cubic spline interpolation to create the \textit{upper envelope}, denoted as \( E_1(t) \). This envelope represents the smoothest line that passes through all local maxima. The goal of this step is to identify the overall trend of the signal's upper variations.
+    
+    \item \textbf{Lower envelope construction}:
+    A cubical spline interpolation is used to join the local minima for generating the \textit{lower envelope} \( E_2(t) \).
+    This envelope represents the smoothest line passing through all local minima, capturing the signal's lower fluctuations.
+    
+    \item \textbf{Mean calculation}:
+    The next step is to calculate the \textit{mean} of the two envelopes. This mean, \( m(t) \), is given by:
+    \begin{equation}
+        m(t) = \frac{E_1(t) + E_2(t)}{2}
+    \end{equation}
+    
+    This mean represents a baseline or trend that is extracted from the signal, and it helps to remove the high-frequency oscillations (the noise).
+    
+    \item \textbf{Extracting the first IMF}:
+   The first IMF is produced by deducting the mean \( m(t) \) from the initial signal, as seen below:
+    \begin{equation}
+         h_1(t) = x(t) - m(t)
+    \end{equation}
+    The resulting \( h_1(t) \) is the first IMF, which represents the first oscillatory mode of the signal. This process helps to isolate the high-frequency components that can be interpreted as oscillations in the data.
+    
+    \item \textbf{Sifting process}:
+    Iteratively, the filtering procedure is carried out until the final IMF meets two requirements:
+    \begin{itemize}
+        \item The no. of \textit{extrema} is equal to the number of \textit{zero crossings}.
+        \item In order to ensure that the IMF accurately depicts oscillatory behavior, its \textit{envelope} is symmetric with respect to the zero axis.
+    \end{itemize}
+   Until the remaining signal (residue) can no longer be broken down, this process continues.
+    
+    \item \textbf{Residue calculation}:
+    After all IMFs have been removed, the residue, represented by the \( r(t) \), is the signal's remaining component. It stands for the long-term pattern or the signal that remains after further breakdown. The overall decomposition can be represented as:
+    \begin{equation}
+    X(t) = \sum_{i=1}^{k} c_i(t) + r(t)
+     \end{equation}
+    Where, \( c_i(t) \): \(i\)-th IMF; \( r(t) \): residue. The IMFs represent oscillatory components at various time scales, while the residue captures the slow-moving trend or the non-oscillatory part of the signal.
+\end{enumerate}
+
+\paragraph{Summary of EMD Steps}
+Once the breakdown procedure is finished, the signal may be shown as a residue and the sum of IMFs:
+\begin{equation}
+X(t) = \sum_{i=1}^{k} c_i(t) + r(t)
+ \end{equation}
+Where, \( c_i(t) \) : \(i\)-th IMF.
+
+The inherent oscillatory modes, each with a distinct frequency content, that are present in the original signal are represented by the IMFs. By extracting these modes, EMD helps in analyzing complex signals such as wind speed data, where the variations span multiple scales, and remove noise components for improved prediction and modeling.
+
+Below are the key disadvantages of the EMD technique:
+\begin{itemize}
+    \item Mode mixing: Mode mixing is a common issue in EMD where different modes with different frequency contents get mixed into a single IMF. This usually happens when there are hard-to-separate high and low-frequency components in the signal. The presence of mode mixing can result in IMFs that are not truly representative of the signal’s intrinsic oscillatory modes, leading to inaccurate decomposition and analysis.
+    \item End-effect issue: The upper and lower envelopes in EMD are constructed via spline interpolation. Nevertheless, the interpolation frequently results in "end effects" at the signal's borders. The accuracy of the IMFs close to the borders may be greatly impacted by these artifacts, which appear as distortions at the start and finish of the signal.
+\end{itemize}
+
+\subsubsection{EEMD algorithm}
+
+The ensemble EMD methodology has been considered as a more reliable, flexible, and efficient way to break down non-stationary and nonlinear time series data in order to overcome the shortcomings of the conventional EMD. EEMD improves upon EMD by mitigating the problem of mode mixing, which often arises when different frequency components are combined into a single IMF during decomposition.
+
+By including Gaussian white noise into the original signal, the EEMD method produces a more stable decomposition at various scales. The following presents the algorithm of the EEMD method:
+
+\paragraph{Addition of Gaussian white noise}
+The Gaussian white noise is added with the input original signal y
+to create multiple realizations of the signal. Each realization is represented as \( y^{(j)} \), where \( j \) indicates the \( j^{th} \) instance of the signal with added noise. The transformation is given by the equation:
+
+\begin{equation}
+y^{(j)} = y + w^{(j)}, \quad \text{where} \quad j = 1, 2, \dots, N
+\end{equation}
+
+Here, \( y \) is the original time series, and \( y^{(j)} \) is the signal with added noise. The number \( N \) represents the number of realizations or noise additions.
+
+\paragraph{Decomposition using EMD}
+Each noisy signal \( y^{(j)} \) is processed independently using EMD to decompose into its IMFs and a residual. This stage guarantees that the signal's breakdown is tailored to the local characteristics of the data.
+
+\paragraph{Averaging the results}
+Once the decomposition for each noisy realization is completed, the IMFs and residuals are averaged across all realizations to obtain the final decomposition result. The final IMFs for the \( q^{th} \) mode are calculated as the negative average of the respective IMFs \( d_q^{(j)} \) acquired from each noisy realization as indicated by the following equation, \( d_q \):
+
+\begin{equation}
+d_q = - \frac{1}{N} \sum_{j=1}^{N} d_q^{(j)}, \quad q = 1, 2, \dots, Q
+\end{equation}
+
+Here, \( d_q \) is the final \( q^{th} \) IMF, \( d_q^{(j)} \) is the \( q^{th} \) IMF from the \( j^{th} \) noisy realization, and \( Q \) is the total number of IMFs, which is determined by:
+
+\begin{equation}
+Q = \left\lfloor \log_2 M \right\rfloor - 1
+\end{equation}
+
+where \( M \): total data points
+
+\paragraph{Effect of noise and mode mixing mitigation}
+EEMD ensures that the IMFs are distributed more evenly across different time scales by adding the Gaussian nosie.  When components of several frequencies are mistakenly put together, mode mixing can place that leads to a poor representation of the signal's intrinsic modes. However, while EEMD reduces mode mixing, it does not completely eliminate the errors introduced by the added noise. These errors can affect both the accuracy of the signal reconstruction and the quality of forecasts based on the decomposed IMFs.
+
+\paragraph{Trade-off between precision and computation}
+The noise-induced mistakes can be lessened by a greater number of ensemble realizations (bigger \( N \)), improving the decomposition’s accuracy. However, increasing \( N \) leads to more computationally intensive calculations and longer processing times. Hence, there is a trade-off between computational efficiency and the precision of the final decomposition result.
+
+
+\subsubsection{CEEMDAN Algorithm}
+
+The CEEMDAN is an advanced variant of the EEMD method, designed to further enhance the decomposition process by reducing the noise-induced errors and improving the separation of IMFs in complex, non-stationary data. CEEMDAN improves the EEMD method by adding adaptive noise and carrying out a more thorough ensemble averaging approach.  This leads to more accurate and stable IMFs, making it particularly suitable for analyzing wind speed data and other complex signals. Algorithm 1 represents CEEMDAN algorithm.
+
+\begin{algorithm}
+\caption{CEEMDAN algorithm}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Time series signal \( x(n) \) with \( N \) data points, number of ensemble iterations \( E \), standard deviation \( \sigma \) for added white noise
+\State \textbf{Output:} Set of IMFs and residual \( r(n) \)
+
+\State Initialize: \( k \gets 1 \), \( r_0(n) \gets x(n) \)
+\While{stopping criterion is not met}
+    \State Generate white noise \( \varepsilon_k(n) \) with standard deviation \( \sigma \)
+    \State Add noise to residual: \( r_k(n) \gets r_{k-1}(n) + \varepsilon_k(n) \)
+    
+    \State Apply EMD to \( r_k(n) \) to obtain the first IMF: \( \text{IMF}_k(n) \)
+    
+    \State Calculate the first residue: \( r_k(n) \gets r_{k-1}(n) - \text{IMF}_k(n) \)
+
+    \For{each ensemble iteration \( j = 1, 2, \dots, E \)}
+        \State \textbf{Noise decomposition:}
+        \State Add white noise \( w_j(n) \) with standard deviation \( \sigma \)
+        \State \( \theta_k \gets \text{scaling factor for noise amplitude} \)
+        \State Decompose noise-added residue:
+        \[
+        \text{IMF}_{k+1}(n) \gets \frac{1}{I} \left( E_1(r_k(n)) + \theta_k E_k(w_j(n)) \right)
+        \]
+        \State \text{where:}
+        \State \( E_1 \) is the EMD applied to the residue \( r_k(n) \)
+        \State \( E_k \) is the EMD applied to the noise-added residue \( r_k(n) + w_j(n) \)
+        \State \( w_j(n) \) is the white noise added in the \( j \)-th ensemble iteration
+        \State \( \theta_k \) is the scaling factor used to adjust the noise amplitude
+
+    \EndFor
+    \State Update \( k \gets k + 1 \)
+\EndWhile
+
+\State \textbf{Output:} Set of IMFs \( \{ \text{IMF}_k(n) \} \) and residual \( r(n) \)
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Advantages and disadvantages of CEEMDAN}
+
+\textbf{Advantages:}  
+CEEMDAN improves upon EEMD by using adaptive noise, which minimizes its impact on the IMFs, leading to more accurate decomposition and better mode separation. The ensemble averaging process further stabilizes the decomposition, making it robust for non-stationary and nonlinear time series analysis.
+
+\textbf{Disadvantages:}  
+Despite its benefits, CEEMDAN is still affected by two main issues: 
+\begin{itemize}
+    \item \textbf{Residual noise:} Residual noise can still remain in the IMFs, affecting the accuracy of the decomposition.
+    \item \textbf{Spurious modes:} The method may generate spurious modes, especially in highly nonlinear or complex signals.
+\end{itemize}
+
+
+
+\subsubsection{Improved CEEMDAN algorithm}
+ICEEMDAN is an improvement over the CEEMDAN that helps in analyzing complex signals. ICEEMDAN aims to address the challenges of residual noise and spurious modes that are often encountered in CEEMDAN. The main improvement lies in the adaptive adjustment of noise levels during the decomposition process. Algorithm 2 represents ICEEMDAN algorithm. Figures \ref{d1}, \ref{d2} are the result of ICEEMDAN decomposition on the wind speed data of wind farm 1 and wind farm 2. 
+
+
+\begin{algorithm}
+\caption{ICEEMDAN Algorithm}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Time series signal \( x(t) \), number of ensemble iterations \( N \), noise scaling factor \( \beta_0 \), and maximum decomposition layers \( K \)
+\State \textbf{Output:} Set of Intrinsic Mode Functions (IMFs) and residue \( r(t) \)
+
+\State Initialize: \( k \gets 1 \), \( r_0(t) \gets x(t) \)
+\For{each ensemble iteration \( i = 1, 2, \dots, N \)}
+    \State \textbf{Noise Injection:} Add white noise \( w_i(t) \) with standard deviation \( \sigma \), and the scaling factor \( \beta_0 \) is used to control the SNR at each iteration.
+    \State Add the first IMF of the noise \( E_1(w_i(t)) \) to the original signal, where $E_1$ is first IMF:
+    \[
+    x_i(t) \gets x(t) + \beta_0 \cdot E_1(w_i(t))
+    \]
+    \State Compute the local mean of \( x_i(t) \), and calculate the residue:
+    \[
+    r_1(t) \gets \frac{1}{N} \sum_{i=1}^{N} M(x_i(t))
+    \]
+    \State Compute the first IMF:
+    \[
+    \text{IMF}_1 \gets x(t) - r_1(t)
+    \]
+\EndFor
+
+\For{k = 2 to K}
+    \State \textbf{Noise decomposition:} For each subsequent IMF, recursively add noise and perform decomposition.
+    \State Compute the residue \( r_k(t) \) for the \( k \)-th IMF:
+    \[
+    r_k(t) \gets \frac{1}{N} \sum_{i=1}^{N} M(r_{k-1}(t) + \epsilon_{k-1} \cdot E_k(w_i(t)))
+    \]
+    \State Here, \( E_k(w_i(t)) \) is the EMD applied to the noisy residue \( r_{k-1}(t) + \epsilon_{k-1} \cdot w_i(t) \), and \( \epsilon_{k-1} \) used for setting SNR for each iteration \( k-1 \).
+    \State Compute the \( k \)-th IMF:
+    \[
+    \text{IMF}_k \gets r_{k-1}(t) - r_k(t)
+    \]
+    \State Update \( k \gets k + 1 \)
+\EndFor
+
+\State \textbf{Output:} Set of IMFs \( \{\text{IMF}_k(t)\} \) and final residue \( r(t) \)
+\end{algorithmic}
+\end{algorithm}
+
+
+\paragraph{Advantages of ICEEMDAN decomposition method:}
+ICEEMDAN offers several advantages over other decomposition methods. First, it incorporates adaptive noise injection, adjusting the noise scaling factor (\( \epsilon_k \)) for each stage that reduces the impact of noise and improves the accuracy of the extracted IMFs. Additionally, by modifying the noise at each step, ICEEMDAN effectively minimizes mode mixing, leading to better frequency separation. The method also provides improved stability through ensemble averaging, especially when dealing with non-stationary signals, making it more robust. Furthermore, ICEEMDAN allows for better control over the SNR at each stage, ensuring optimal decomposition with minimal interference from noise.
+
+\begin{figure}
+    \centering
+     \rotatebox{90}{\includegraphics[width=0.95\textheight, keepaspectratio]{c1.eps}}
+    \caption{ICEEMDAN decomposition result for wind farm 1}
+    \label{d1}
+\end{figure}
+
+\begin{figure}
+    \centering
+      \rotatebox{90}{\includegraphics[width=0.95\textheight, keepaspectratio]{c2.eps}}
+    \caption{ICEEMDAN decomposition result for wind farm 2}
+    \label{d2}
+\end{figure}
+
+
+
+\subsection{Transformer Network for the WSF}
+The raw wind speed data is denoised using the ICEEMDAN decomposition algorithm and fed to the transformer model for the WSF. A transformer neural network is developed by incorporating the principles of self, and mutual attention mechanisms. Retrieval values are like the architecture of the attention mechanism neural network. Attention mechanisms are able to gather distant tokens of pertinent information because attention weights are based on relevance and are applied using the prior state. Every token is processed simultaneously and attention weights are calculated. The architecture of the transformer model is shown in Figure \ref{tra_fig2}. The transformer model has several benefits such as: \\
+1. Parallel processing\\
+2. Create a connection or link between any two parts of the sequence\\
+3. There is no issue with long-term dependencies
+
+\begin{figure}
+\centerline{\includegraphics[width=\columnwidth]{Figures/Trans.eps}}
+\caption{Architecture of the transformer model}
+\label{tra_fig2}
+\end{figure}
+
+Transformer is a encoder-decoder architecture that relies upon attention mechanism, that completely eliminates RNNs, which are capable of computing the sequence efficiently. The canonical transformer uses encoder, decoder configuration with stacked encoder and the decoder layers. Encoder layers, as seen in Figure \ref{tra_fig2}, they are made up of two sub layers: self-attention as well as a position-wise feed-forward. Vectors are created by the encoder and they are fed to the decoder. Decoder layers has three sub layers, followed by encoder–-decoder attention layer and position-wise feed-forward layer. During training of wind speed data, masking in the self-attention matrix is employed in the decoder layer to restrict the decoder in capturing the features from the future timesteps. Transformer speeds up training and convergence by using residual connections around each sub layer, and then normalizing the layer.
+
+Each input layer determines the relevance of the inputs in wind speed data, which are then fed as inputs to the subsequent encoding layers. A self-attention score is used to determine the relevance of newly created tokens to previously generated tokens in an extended sequence. The self-attention score is low for the low relevancy input segment, it is high for the high relevancy input values. 
+
+Including positional information within inputs enhanced the transformer network ability to handle temporal dependence in wind speed data, hence aiding the self-attention process. The transformer network core principle lies in the multi-head attention layer. The encoder block output is fed to the decoder block's multi-head attention layer. The decoder-encoder blocks are repeated several times across multiple layers. To decide the transformer model about order positions, the position embedding can manage the order of data points of wind data in relation to time. The complete input timesteps are passed to the encoder model simultaneously, results in the parallel processing. To process massive amounts of wind speed data, input’s most salient characteristics are weighted differently. To mitigate the impact of the poor forecasting model, fusion techniques are being used. Self-attention mechanisms help to filter out irrelevant input while emphasizing parts of more relevant input.The current token encoding would be strongly dependent on previous token relevancy due to self-attention leverage of a parallel process of so many previous hidden time stamps.
+
+The three parameters which are particularly important for transformer model in WSF are as follows: 1. Query (A), 2. Key (B), 3. Value (C). Three weight matrices created during wind data training are used to obtain the A, B, and C value vectors for each token.
+\subsubsection*{\textbf{The mathematical modeling of the transformer network is given below}}
+\begin{equation}
+Input \ embedding = i_N = EE_N + PE_N
+\end{equation}
+Add and Normalize:\\
+Add,
+\begin{equation}
+\psi = I + O
+\end{equation}
+
+\begin{equation} 
+Normalization, \eta =\frac{1}{nN} \sum _{i=1}^{n}\sum _{j=1}^{N}\psi _{ij}                          
+\end{equation}
+
+\begin{equation} \label{EQ__13_} 
+\sigma ^{2} =\frac{1}{nN} \sum _{i=1}^{n}\sum _{j=1}^{N}(\psi _{ij} -\eta )^{2}    
+\end{equation} 
+\begin{equation} \label{EQ__14_} 
+Z_{ij} =\frac{\psi _{ij} -\eta }{\sqrt{\sigma ^{2} +\varepsilon } }  
+\end{equation} 
+Self-attention:
+\begin{equation} \label{EQ__15_} 
+I=\left[i_{1}, i_{2}, ..., i_{N} \right] 
+\end{equation} 
+\begin{equation} \label{EQ__16_} 
+O=\left[o_{1}, o_{2}, ..., o_{N} \right] 
+\end{equation} 
+\begin{equation} \label{EQ__17_} 
+A=\left[a_{1}, a_{2}, ..., a_{N} \right] 
+\end{equation} 
+\begin{equation} \label{EQ__18_} 
+B=\left[b_{1}, b_{2}, ..., b_{N} \right] 
+\end{equation} 
+\begin{equation} \label{EQ__19_} 
+C=\left[c_{1}, c_{2}, ..., c_{N} \right] 
+\end{equation} 
+\[A=SW_{A} I, B=SW_{B} I, C=SW_{C} I\] 
+\begin{equation} \label{EQ__20_} 
+Y=\frac{B^{T} A}{\sqrt{n} }  
+\end{equation} 
+New embedding using weighted average:
+\begin{equation} \label{EQ__21_} 
+O=CSW 
+\end{equation} 
+Concatenated output vector with the Multi head attention is represented as:
+
+\begin{equation} \label{EQ__22_} 
+\tilde{O}=\left[\begin{array}{l} {o_{1} } \\ {o_{2} } \\ {} \\ {o_{H} } \end{array}\right] 
+\end{equation} 
+\begin{equation} \label{EQ__23_} 
+O=SW^{0} \tilde{O} 
+\end{equation} 
+Masked Self Attention is as follows:
+\begin{equation} \label{EQ__24_} 
+A=SW_{A} I 
+\end{equation} 
+\begin{equation} \label{EQ__25_} 
+B=SW_{B} I 
+\end{equation} 
+\begin{equation} \label{EQ__26_} 
+C=SW_{C} I 
+\end{equation} 
+\begin{equation} \label{EQ__27_} 
+Y=\frac{B^{T} A}{\sqrt{n} }  
+\end{equation} 
+\setlength{\tabcolsep}{2pt}
+\begin{multline}\label{EQ__28_} 
+SW=\\
+\begin{bmatrix}
+\begin{tabular}{ccccc}
+1 & $sm_{1}(Y_{12} ,Y_{22})$ & ... & $sm_{1}(Y_{14}, Y_{24},...Y_{ij})$\\
+0 & $sm_{2}(Y_{11} ,Y_{22})$ & ... & $sm_{2}(Y_{14}, Y_{24},...Y_{ij})$ \\
+0 & 0 & ... & $sm_{3}(Y_{14}, Y_{24},...Y_{ij})$ \\
+. &  . & . & . \\
+0 &  0 &  ... & $sm_{i}(Y_{14}, Y_{24},...Y_{ij})$
+\end{tabular}
+\end{bmatrix}
+\end{multline} 
+\begin{equation} 
+\label{EQ__29_} 
+New\ embedding\ based\ on\ weighted\ average\ O=CSW
+\end{equation}
+Encoder decoder self-attention is represented below:
+\begin{equation} \label{EQ__30_} 
+I_{d} =\left[i_{1}^{d}, i_{2}^{d}, ... , i_{Nd}^{d} \right] 
+\end{equation} 
+\begin{equation} \label{EQ__31_} 
+I_{e} =\left[i_{1}^{e}, i_{2}^{e}, ... , i_{Ne}^{e} \right]
+\end{equation} 
+\begin{equation} \label{EQ__32_} 
+A=SW_{A} I_{d}  
+\end{equation} 
+\begin{equation} \label{EQ__33_} 
+B=SW_{B} I_{e}  
+\end{equation} 
+\begin{equation} \label{EQ__34_} 
+C=SW_{C} I_{e}  
+\end{equation} 
+\begin{equation} 
+\label{EQ__35_} 
+Weights, Z=\frac{B^{T} A}{\sqrt{n} }                           
+\end{equation}
+\begin{equation} \label{EQ__36_} 
+SW=soft\max (Z) 
+\end{equation} 
+Weighted average based new embedding $O=CSW$; \\
+Where,\\
+$sm$: softmax; $SW$: Synaptic weight; $I$: encoder input; $O$: decoder outputs; $I_{e} $: output of encoder; $I_{D} $: input of decoder; $N$: no. of inputs; $H$: no. of heads; $n$: embedding length; $B^{T} $: transpose of B; $EE_{u} $: embedding of encoder; $PE_{u} $: position embedding; $\eta $= average; $\sigma ^{2} $: variance; $Y_{ij} $: normalized output; $SW^{0} $: dimensionality reduction matrix; $\varepsilon $ : numerical stability constant;\\
+The feed-forward neural network, which works as a 1D convolution, speeds up the calculation. Transformer normalization reduces covariate shift, which expedites training. Encoder receives the input wind speed data which help decoder to predict the future wind speed data. The encoder is linked via an attention mechanism, and the attention mechanism performs current WSF on a portion of the sequence. The usage of transformer for WSF reduced training time due to parallelization. In encoding process sine and cosine functions are used. WSF is ensured via position offset and filtering to look at the future of later data samples.
+
+\section{Experimental results and discussions}
+In this section, the performance of the proposed hybrid model is evaluated using two wind farms for different time horizons such as 5-min, 15-min, 30-min and 1-hour.
+
+\subsection{Data description}
+This study utilized two different datasets from wind farms located in Block Island, Rhode Island state (wind farm 1), Gulf coast wind farm, Texas State (wind farm 2).  Data corresponding to wind speed is taken in 5-min intervals from both wind farms. Actual wind speed data is transformed into 5-min, 15-min, 30-min, and 1-hour samples to validate the performance of the proposed hybrid model for different time horizons. The characteristics of the two wind farms are shown in Table \ref{Tra_Table 1}. 80\% of the data is considered the training dataset, and the remaining 20\% is used as the test dataset. The wind speed sequence used is as shown in the Figures \ref{w1}, and \ref{w2}. Hence WSF becomes complicated. The wind speed sequence is significantly unsteady and fluctuate in the two wind farms, making it difficult to capture its properties. 
+
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{Figures/w1.eps}
+\caption{Wind speed variation at wind farm 1 }
+\label{w1}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{Figures/w2.eps}
+\caption{Wind speed variation at wind farm 2}
+\label{w2}
+\end{figure}
+
+\begin{table}[]
+\centering
+\caption{Wind speed dataset characteristics}
+\label{Tra_Table 1}
+\begin{tabular}{lllllllll}
+\hline
+\multicolumn{1}{|l|}{Wind farm}    & \multicolumn{1}{l|}{Mean} & \multicolumn{1}{l|}{Median} & \multicolumn{1}{l|}{Mode} & \multicolumn{1}{l|}{std} & \multicolumn{1}{l|}{Sample Variance} & \multicolumn{1}{l|}{Minimum} & \multicolumn{1}{l|}{Maximum} \\ \hline
+\multicolumn{1}{|l|}{Block Island} & \multicolumn{1}{c|}{8.41}        & \multicolumn{1}{c|}{8.07}   & \multicolumn{1}{c|}{8.04} & \multicolumn{1}{c|}{4.04}               & \multicolumn{1}{c|}{16.32}           & \multicolumn{1}{c|}{0.08}    & \multicolumn{1}{c|}{36.97}   \\ \hline
+\multicolumn{1}{|l|}{Gulf Cost}    & \multicolumn{1}{c|}{7.53}           & \multicolumn{1}{c|}{7.54}   & \multicolumn{1}{c|}{7.75} & \multicolumn{1}{c|}{2.83}               & \multicolumn{1}{c|}{8.01}            & \multicolumn{1}{c|}{0.05}    & \multicolumn{1}{c|}{26.43}   \\ \hline                            
+\end{tabular}
+Abbreviation: std= Standard deviation;
+\end{table}
+
+\subsection{Hyperparameter configuration of WSF models}
+To assess the effectiveness of the proposed ICEEMDAN-TRA model, the complete range of models has been separated into two distinct categories. The initial category of models consists of individual models, such as ANN, CNN, LSTM, GRU, BiLSTM and TCN. The hybridization of these models has been achieved through the utilization of an ICEEMDAN data decomposition method, resulting in the creation of a second category of hybrid models. In the ICEEMDAN algorithm, the parameters such as ratio of standard deviation of noise added, and that of wind sequences is taken as 0.05, the IMF number as seven, and maximum shifting iteration is taken as 100.  Parameter selection is performed through the grid search method.  The specific parameter along with the selected parameters, are detailed in Table \ref{pa_tra}.  Tuning hyperparameters is crucial for DL models. To ensure a thorough evaluation of the WSF models, grid search method is employed. This method systematically explores a predefined range of parameters and identifies the optimal hyperparameters for predictions. The initial parameter ranges are determined through domain expertise and preliminary experiments. The best hyperparameters for all the WSF models are represented in Table \ref{pa_tra} based on preset metrics.
+
+This rigorous tuning process ensures a reliable comparison of WSF algorithms. Weight optimization for all the models has been carried out using the adaptive momentum estimation method (Adam) with the MSE loss function. To ensure the consistency of the results, the experiments are repeated 10 times to account for any random variations in the training process. The final reported results are the average metrics derived from these multiple runs. From Table \ref{pa_tra}, the abbreviations are defined as follows: L represents an LSTM layer, D denotes a dense layer, C refers to a convolutional layer, G stands for a GRU layer, Bi indicates a BiLSTM layer, and T refers to a TCN layer.
+
+
+\begin{table}
+\caption{Configuration of the WSF models}
+\label{pa_tra}
+\centering
+\scalebox{0.9}{
+\begin{tabular}{p{3cm} p{4cm}p{9cm}}
+\hline
+\textbf{Model} & \textbf{Parameters} & \textbf{Values} \\
+\hline
+ANN & Epochs & 100 \\
+& Layers & 4D with neurons (256, 64, 32, 1) \\
+& learning rate & 0.001\\
+\hline
+
+CNN & Epochs & 100\\
+& Layers & 3C with filters (128, 64, 32) \\
+& &                3D with (64, 32, 1) \\
+& Pooling & 'max' \\
+& padding & 'same' \\
+\hline
+
+LSTM & Epochs & 100\\
+& Layers & 3L with units (128, 64, 32) \\
+& &                3D with (64, 32, 1) \\
+\hline
+
+GRU & Epochs & 100\\
+& Layers & 3G with units (256, 128, 64) \\
+& &                3D with (64, 32, 1) \\
+\hline
+
+BiLSTM & Epochs & 100\\
+& Layers & 3Bi with units (128, 64, 32) \\
+& &                3D with (32, 16, 1) \\
+\hline
+
+
+TCN & Epochs & 100\\
+& Layers & 3T with filters (128, 64, 32) \\
+& &                3D with (64, 32, 1) \\
+& Dilations & (1, 2, 4) \\
+\hline
+
+
+
+Transformer & Epochs & 100\\
+& Encoder layers  & 3 \\
+& Decoder layers   & 3 \\
+& Heads & 4 \\
+& Attention mechanism & Self attention \\
+\hline
+
+\end{tabular}}
+
+\end{table}
+
+
+
+\begin{table}[]
+\centering
+\caption{Comparison of performance indices between proposed ICEEMDAN-TRA model and other individual and their hybrid models for all time intervals at wind farm 1}
+\label{tra_Table 3}
+\scalebox{0.9}{
+\begin{tabular}{l|cccc|cccc}
+\hline
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}}                           & \multicolumn{4}{c|}{\textbf{5-mins}}                                                                                     & \multicolumn{4}{c}{\textbf{15-mins}}                                                                                    \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                                                          & \multicolumn{1}{c}{\textbf{ RMSE }} & \multicolumn{1}{c}{\textbf{ MAE }} & \multicolumn{1}{c}{\textbf{ MSE }} & \textbf{$R^2$} & \multicolumn{1}{c}{\textbf{ RMSE }} & \multicolumn{1}{c}{\textbf{ MAE }} & \multicolumn{1}{c}{\textbf{ MSE }} & \textbf{  $R^2$  } \\ \hline
+\textbf{ANN}                                                                    & \multicolumn{1}{c}{ 0.9049 }        & \multicolumn{1}{c}{ 0.7392 }       & \multicolumn{1}{c}{ 0.8189 }       & 0.8905      & \multicolumn{1}{c}{ 1.2443 }        & \multicolumn{1}{c}{ 1.0421 }       & \multicolumn{1}{c}{ 1.5484 }       & 0.8244      \\ \hline
+\textbf{CNN}                                                                    & \multicolumn{1}{c}{0.6221}        & \multicolumn{1}{c}{0.4584}       & \multicolumn{1}{c}{0.3870}        & 0.9405      & \multicolumn{1}{c}{0.8183}        & \multicolumn{1}{c}{0.5462}       & \multicolumn{1}{c}{0.6696}       & 0.9105      \\ \hline
+\textbf{LSTM}                                                                   & \multicolumn{1}{c}{0.5660}        & \multicolumn{1}{c}{0.4582}       & \multicolumn{1}{c}{0.3203}       & 0.9422      & \multicolumn{1}{c}{0.7120}        & \multicolumn{1}{c}{0.4857}       & \multicolumn{1}{c}{0.5069}       & 0.9241      \\ \hline
+\textbf{GRU}                                                                    & \multicolumn{1}{c}{0.7094}        & \multicolumn{1}{c}{0.6023}       & \multicolumn{1}{c}{0.5033}       & 0.9132      & \multicolumn{1}{c}{0.7557}        & \multicolumn{1}{c}{0.5087}       & \multicolumn{1}{c}{0.5711}       & 0.9169      \\ \hline
+\textbf{BiLSTM}                                                                 & \multicolumn{1}{c}{0.5089}        & \multicolumn{1}{c}{0.3853}       & \multicolumn{1}{c}{0.259}        & 0.9588      & \multicolumn{1}{c}{0.6944}        & \multicolumn{1}{c}{0.4767}       & \multicolumn{1}{c}{0.4822}       & 0.9341      \\ \hline
+\textbf{TCN}                                                                    & \multicolumn{1}{c}{0.4596}        & \multicolumn{1}{c}{0.3012}       & \multicolumn{1}{c}{0.2112}       & 0.9612      & \multicolumn{1}{c}{0.6421}        & \multicolumn{1}{c}{0.4597}       & \multicolumn{1}{c}{0.4123}       & 0.9472      \\ \hline
+\textbf{TRA}                                                                    & \multicolumn{1}{c}{0.3616}        & \multicolumn{1}{c}{0.2804}       & \multicolumn{1}{c}{0.1308}       & 0.9671      & \multicolumn{1}{c}{0.5798}        & \multicolumn{1}{c}{0.4025}       & \multicolumn{1}{c}{0.3361}       & 0.9578      \\ \hline
+\textbf{ICEEMDAN-ANN}                                                           & \multicolumn{1}{c}{0.8523}        & \multicolumn{1}{c}{0.7395}       & \multicolumn{1}{c}{0.7265}       & 0.9041      & \multicolumn{1}{c}{0.8212}        & \multicolumn{1}{c}{0.6621}       & \multicolumn{1}{c}{0.6743}       & 0.9294      \\ \hline
+\textbf{ICEEMDAN-CNN}                                                           & \multicolumn{1}{c}{0.5623}        & \multicolumn{1}{c}{0.4398}       & \multicolumn{1}{c}{0.3162}       & 0.9425      & \multicolumn{1}{c}{0.7302}        & \multicolumn{1}{c}{0.5599}       & \multicolumn{1}{c}{0.5333}       & 0.9385      \\ \hline
+\textbf{ICEEMDAN-LSTM}                                                          & \multicolumn{1}{c}{0.4974}        & \multicolumn{1}{c}{0.3864}       & \multicolumn{1}{c}{0.2474}       & 0.9477      & \multicolumn{1}{c}{0.7186}        & \multicolumn{1}{c}{0.5499}       & \multicolumn{1}{c}{0.5163}       & 0.9400      \\ \hline
+\textbf{ICEEMDAN-GRU}                                                           & \multicolumn{1}{c}{0.5802}        & \multicolumn{1}{c}{0.5111}       & \multicolumn{1}{c}{0.3366}       & 0.9310      & \multicolumn{1}{c}{0.6166}        & \multicolumn{1}{c}{0.4990}       & \multicolumn{1}{c}{0.3802}       & 0.9675      \\ \hline
+\textbf{ICEEMDAN-BiLSTM}                                                        & \multicolumn{1}{c}{0.4281}        & \multicolumn{1}{c}{0.3862}       & \multicolumn{1}{c}{0.1833}       & 0.9661      & \multicolumn{1}{c}{0.6388}        & \multicolumn{1}{c}{0.5032}       & \multicolumn{1}{c}{0.4081}       & 0.9767      \\ \hline
+\textbf{ICEEMDAN-TCN}                                                           & \multicolumn{1}{c}{0.3537}        & \multicolumn{1}{c}{0.2532}       & \multicolumn{1}{c}{0.1251}       & 0.9788      & \multicolumn{1}{c}{0.4896}        & \multicolumn{1}{c}{0.4072}       & \multicolumn{1}{c}{0.2397}       & 0.9685      \\ \hline
+\textbf{Proposed approach} & \multicolumn{1}{c}{\textbf{0.2716}}        & \multicolumn{1}{c}{\textbf{0.2022}}       & \multicolumn{1}{c}{\textbf{0.0737}}       & \textbf{0.9835}      & \multicolumn{1}{c}{\textbf{0.4207}}        & \multicolumn{1}{c}{\textbf{0.3622}}       & \multicolumn{1}{c}{\textbf{0.1770}}       & \textbf{0.9797}      \\ \hline
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}}                           & \multicolumn{4}{c|}{\textbf{30-mins}}                                                                                    & \multicolumn{4}{c}{\textbf{1-hour}}                                                                                     \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                                                          & \multicolumn{1}{c}{\textbf{RMSE}} & \multicolumn{1}{c}{\textbf{MAE}} & \multicolumn{1}{c}{\textbf{MSE}} & \textbf{$R^2$} & \multicolumn{1}{c}{\textbf{RMSE}} & \multicolumn{1}{c}{\textbf{MAE}} & \multicolumn{1}{c}{\textbf{MSE}} & \textbf{$R^2$} \\ \hline
+\textbf{ANN}                                                                    & \multicolumn{1}{c}{1.4541}        & \multicolumn{1}{c}{1.1121}       & \multicolumn{1}{c}{2.1143}       & 0.6961      & \multicolumn{1}{c}{2.1409}        & \multicolumn{1}{c}{1.5372}       & \multicolumn{1}{c}{4.5833}       & 0.5562      \\ \hline
+\textbf{CNN}                                                                    & \multicolumn{1}{c}{0.9733}        & \multicolumn{1}{c}{0.7528}       & \multicolumn{1}{c}{0.9473}       & 0.8934      & \multicolumn{1}{c}{1.4290}        & \multicolumn{1}{c}{1.1352}       & \multicolumn{1}{c}{2.0421}       & 0.7585      \\ \hline
+\textbf{LSTM}                                                                   & \multicolumn{1}{c}{0.8858}        & \multicolumn{1}{c}{0.6589}       & \multicolumn{1}{c}{0.7846}       & 0.9115      & \multicolumn{1}{c}{1.2667}        & \multicolumn{1}{c}{0.9745}       & \multicolumn{1}{c}{1.6046}       & 0.8567      \\ \hline
+\textbf{GRU}                                                                    & \multicolumn{1}{c}{0.8819}        & \multicolumn{1}{c}{0.6098}       & \multicolumn{1}{c}{0.7777}       & 0.9069      & \multicolumn{1}{c}{1.2179}        & \multicolumn{1}{c}{0.9101}       & \multicolumn{1}{c}{1.4834}       & 0.8818      \\ \hline
+\textbf{BiLSTM}                                                                 & \multicolumn{1}{c}{0.8335}        & \multicolumn{1}{c}{0.5631}       & \multicolumn{1}{c}{0.6947}       & 0.9201      & \multicolumn{1}{c}{1.2569}        & \multicolumn{1}{c}{0.9557}       & \multicolumn{1}{c}{1.5797}       & 0.8727      \\ \hline
+\textbf{TCN}                                                                    & \multicolumn{1}{c}{0.8091}        & \multicolumn{1}{c}{0.5386}       & \multicolumn{1}{c}{0.6546}       & 0.9237      & \multicolumn{1}{c}{1.1815}        & \multicolumn{1}{c}{0.9038}       & \multicolumn{1}{c}{1.3959}       & 0.8831      \\ \hline
+\textbf{TRA}                                                                    & \multicolumn{1}{c}{0.7045}        & \multicolumn{1}{c}{0.5057}       & \multicolumn{1}{c}{0.4963}       & 0.9393      & \multicolumn{1}{c}{1.1646}        & \multicolumn{1}{c}{0.8069}       & \multicolumn{1}{c}{1.3563}       & 0.8967      \\ \hline
+\textbf{ICEEMDAN-ANN}                                                           & \multicolumn{1}{c}{1.2037}        & \multicolumn{1}{c}{0.9144}       & \multicolumn{1}{c}{1.4489}       & 0.8606      & \multicolumn{1}{c}{1.3529}        & \multicolumn{1}{c}{1.1098}       & \multicolumn{1}{c}{1.8304}       & 0.7927      \\ \hline
+\textbf{ICEEMDAN-CNN}                                                           & \multicolumn{1}{c}{0.8439}        & \multicolumn{1}{c}{0.5997}       & \multicolumn{1}{c}{0.7122}       & 0.9220      & \multicolumn{1}{c}{0.9086}        & \multicolumn{1}{c}{0.7029}       & \multicolumn{1}{c}{0.8255}       & 0.9054      \\ \hline
+\textbf{ICEEMDAN-LSTM}                                                          & \multicolumn{1}{c}{0.8225}        & \multicolumn{1}{c}{0.5806}       & \multicolumn{1}{c}{0.6766}       & 0.9300      & \multicolumn{1}{c}{0.9122}        & \multicolumn{1}{c}{0.6943}       & \multicolumn{1}{c}{0.8321}       & 0.8938      \\ \hline
+\textbf{ICEEMDAN-GRU}                                                           & \multicolumn{1}{c}{0.6694}        & \multicolumn{1}{c}{0.5349}       & \multicolumn{1}{c}{0.4481}       & 0.9567      & \multicolumn{1}{c}{0.8357}        & \multicolumn{1}{c}{0.6620}       & \multicolumn{1}{c}{0.6985}       & 0.9136      \\ \hline
+\textbf{ICEEMDAN-BiLSTM}                                                        & \multicolumn{1}{c}{0.8102}        & \multicolumn{1}{c}{0.5855}       & \multicolumn{1}{c}{0.6564}       & 0.9406      & \multicolumn{1}{c}{0.7311}        & \multicolumn{1}{c}{0.5480}       & \multicolumn{1}{c}{0.5345}       & 0.9451      \\ \hline
+\textbf{ICEEMDAN-TCN}                                                           & \multicolumn{1}{c}{0.6242}        & \multicolumn{1}{c}{0.4791}       & \multicolumn{1}{c}{0.3896}       & 0.9481      & \multicolumn{1}{c}{0.6705}        & \multicolumn{1}{c}{0.5242}       & \multicolumn{1}{c}{0.4495}       & 0.9464      \\ \hline
+\textbf{Proposed approach} & \multicolumn{1}{c}{\textbf{0.5780}}         & \multicolumn{1}{c}{\textbf{0.4383}}       & \multicolumn{1}{c}{\textbf{0.3341}}       & \textbf{0.9585}      & \multicolumn{1}{c}{\textbf{0.6234}}        & \multicolumn{1}{c}{\textbf{0.4855}}       & \multicolumn{1}{c}{\textbf{0.3887}}       & \textbf{0.9545}      \\ \hline
+\end{tabular}}
+\end{table}
+
+\begin{figure}
+\centerline{\includegraphics[width=\columnwidth]{Figures/TRA_Block_proposed.png}}
+\caption{Prediction result of proposed ICEEMDAN-TRA model and other hybrid models at wind farm 1}
+\label{tra_fig 3}
+\end{figure}
+
+\begin{figure}
+\centerline{\includegraphics[width=\columnwidth]{Figures/TRA_Block_Error_Proposed.png}}
+\caption{Comparison of forecasting error of wind speed: ICEEMDAN-TRA and other reference models for wind farm 1}
+\label{tra_fig 4}
+\end{figure}
+
+\begin{table}
+\centering
+\caption{Percentage improvement of ICEEMDAN-TRA model relative to all the reference hybrid models for all time horizons at wind farm 1}
+\label{tra_Table 4}
+\scalebox{1}{
+\begin{tabular}{|l|ccc|ccc|}
+\hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{5-min}}         & \multicolumn{3}{c|}{\textbf{15-min}}          \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 68\%          & 73\%         & 90\%         & 49\%          & 45\%         & 74\%            \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 52\%          & 54\%         & 77\%         & 42\%          & 35\%         & 67\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 45\%          & 48\%         & 70\%         & 41\%          & 34\%         & 66\%             \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     &53\%          & 60\%         & 78\%         & 32\%          & 27\%         & 53\%           \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 37\%          & 48\%         & 60\%         & 34\%          & 28\%         & 57\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 23\%          & 20\%         & 41\%         & 14\%          & 11\%         & 26\%                \\ \hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{30-min}}         & \multicolumn{3}{c|}{\textbf{1-hour}}        \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 52\%          & 52\%         & 77\%         & 54\%          & 56\%         & 79\%          \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 32\%          & 27\%         & 53\%         & 31\%          & 31\%         & 53\%     \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 30\%          & 25\%         & 51\%         & 32\%          & 30\%         & 53\%        \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     & 14\%          & 18\%         & 25\%         & 25\%          & 27\%         & 44\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 29\%          & 25\%         & 49\%         & 15\%          & 11\%         & 27\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 7\%          & 9\%         & 14\%         & 7\%          & 7\%         & 14\%             \\ \hline   
+\end{tabular}}
+\end{table}
+
+
+\subsection{Case study 1: Performance of the proposed hybrid ICEEMDAN-TRA model at wind farm 1}
+Using ICEEMDAN, the input wind speed signal is decomposed, and the resulting IMFs produced the noiseless signal. The prediction results are shown in Figures \ref{tra_fig 3} and \ref{tra_fig 4}. Comparison of performance indices between proposed ICEEMDAN-TRA model and other comparative models are shown in the Tables \ref{tra_Table 3} and \ref{tra_Table 4}. Figure \ref{tra_fig 3} shows the comparison of predicted wind speeds by all hybrid models. Similarly, the forecasting error plots for wind farm 1 are shown in the Figure \ref{tra_fig 4}. 
+From Tables \ref{tra_Table 3} and \ref{tra_Table 4}, Figures \ref{tra_fig 3} and \ref{tra_fig 4}, it could be explained as follows:
+
+The transformer model achieves better results among all individual models at windfarm 1 such as TCN, BiLSTM, LSTM, GRU, CNN, and ANN. The RMSE values of the Transformer model ranged from 0.3616 to 1.1646 for 5-min to 1-hour ahead WSF. Similarly, the MAE values varied between 0.2804 and 0.8069 across the same time horizons. In terms of MSE, the transformer model outperforms the second-best individual model by approximately 38\% for 5-mins, 18\% for 15-mins, 24\% for 30-mins, and 3\% for 1-hour. In contrast to other individual models, the $R^2$ score is greater than 0.85 for all time intervals. This significant improvement in accuracy is due to transformers and its parallelized input structure, which improves model training efficiency while also improving the model's ability to describe more distant interrelations between sequences internally. And with the aid of self-attention processes, these transformer networks can enhance their capacity to manage complicated and varied wind data. The hybrid transformer model i.e., ICEEMDAN-TRA model achieved better results among all hybrid models. The RMSE values of the ICEEMDAN-TRA model ranged from 0.2716 to 0.6234 for 5-min to 1-hour ahead WSF. Similarly, the MAE values varied between 0.2022 and 0.4855, while the MSE values ranged from 0.0737 to 0.3887 across the same time intervals at wind farm 1. Compared to the ICEEMDAN-TCN model, the proposed hybrid model achieved improvement of around 23\%, 20\%, and 41\%, respectively for 5-min, 14\%, 11\%, and 26\%, respectively for 15-min, 7\%, 9\%, and 14\% respectively for 30-min, 7\%, 7\%, and 14\% respectively for 1-hour, in terms of RMSE, MAE, and MSE at wind farm 1. Similarly, the metrics from Table \ref{tra_Table 3} show that the hybrid transformer model $R^2$ values consistently above 0.95 for all time intervals, showing its superior performance. These $R^2$ score values of proposed ICEEMDAN-TRA model at wind farm 1 are 0.9835 for 5-min, 0.9797 for 15-min, 0.9585 for 30-min, and 0.9545 for 1-hour ahead WSF. With the removal of noise from the input raw data, the error values are reduced for the ICEEMDAN based models as seen from the error metrics. The percentage of improvement of ICEEMDAN-TRA model over transformer model in terms of MSE are 44\% for 5-min, 47\% for 15-min, 33\% for 30-min, and 71\% for 1-hour. Therefore, it clearly shows the data decomposition technique ICEEMDAN improves the performance of transformer model. Table \ref{tra_Table 4} presents the percentage improvements achieved by the proposed ICEEMDAN-TRA model compared to other hybrid models at wind farm 1.
+
+\begin{table}[]
+\centering
+\caption{Comparison of performance indices between proposed ICEEMDAN-TRA model and other individual and their hybrid models for all time intervals at wind farm 2}
+\label{tra_Table 5}
+\scalebox{0.9}{
+\begin{tabular}{l|cccc|cccc}
+\hline
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}} & \multicolumn{4}{c|}{\textbf{5-min}}        & \multicolumn{4}{c}{\textbf{15-min}}             \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                       & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     \\ \hline
+ANN                                     & 0.5987 & 0.4868 & 0.3585 & 0.8248 & 1.0866 & 0.8435 & 1.1807 & 0.7559  \\ \hline
+CNN                                     & 0.4350 & 0.3492 & 0.1892	& 0.9385 & 0.8390 &	0.6721 & 0.7040	 & 0.8601   \\ \hline
+LSTM                                        & 0.4706 & 0.4034	& 0.2215 & 0.9207 &	0.6971	& 0.5400	& 0.4859	& 0.9026  \\ \hline
+GRU                                        & 0.4583 & 0.3714 & 0.2100 & 0.9230 & 0.7082	& 0.5751 & 0.5015 & 0.9002   \\ \hline
+BiLSTM                                        & 0.4521 & 0.3584 & 0.2044 & 0.9325	& 0.6675 & 0.5338	& 0.4456 & 0.9131  \\ \hline
+TCN                                        & 0.3431	& 0.2861 & 0.1276 & 0.9433 & 0.6272 & 0.5006 & 0.4264 & 0.9218  \\ \hline
+TRA                                & 0.2795	& 0.2162 & 0.0781 & 0.9519 & 0.5130 & 0.3775 & 0.2632 & 0.9386  \\ \hline
+ICEEMDAN-ANN                         & 0.4723 & 0.3961 & 0.2230 & 0.9647 & 0.8543 & 	0.6458 & 0.7299 & 0.8960  \\ \hline
+ICEEMDAN-CNN                              & 0.4133 & 0.3105 & 0.1708 & 0.9753 & 0.5963 & 0.4240 & 0.3555 &	0.9541  \\ \hline
+ICEEMDAN-LSTM                               & 0.3568 & 0.2824 & 0.1273 & 0.9806 & 0.6247 & 0.4844 & 0.3902 & 0.9358 \\ \hline
+ICEEMDAN-GRU                               & 0.3723 & 0.2997 & 0.1386 & 0.9788 & 0.6712 & 0.4992 & 0.4505 & 0.9335  \\ \hline
+ICEEMDAN-BilSTM                               & 0.3276 & 0.2449 & 0.1074 & 0.9877 & 0.6244 & 0.4706 & 0.3899 & 0.9452  \\ \hline
+ICEEMDAN-TCN                               & 0.3198 & 0.2561 & 0.1023 & 0.9879 & 0.5108	& 0.3557 & 0.2609 & 0.9497  \\ \hline
+\textbf{Proposed approach}                           & \textbf{0.2156} & \textbf{0.1820} & \textbf{0.0464}  & \textbf{0.9889} & \textbf{0.4111} & \textbf{0.3185} & \textbf{0.1690} & \textbf{0.9681} \\ \hline
+
+
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}} & \multicolumn{4}{c|}{\textbf{30-min}}       & \multicolumn{4}{c}{\textbf{1-hour}}        \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                       & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     \\ \hline
+ANN                                    & 1.2545 & 0.9684 & 1.5738 & 0.6686 & 1.4107 &	1.1104 & 1.9901 & 0.6559  \\ \hline
+CNN                                    & 0.8111	& 0.5975 & 0.6579 & 0.8621 & 0.9051 &	0.7127 & 0.8192 & 0.8604  \\ \hline
+LSTM                                   & 0.7453 & 0.5214 & 0.5555 & 0.8772 & 0.9129 &	0.7402 & 0.8334 & 0.8632  \\ \hline
+GRU                                    & 0.7625 & 0.5511 & 0.5814 & 0.8706 & 0.8459 &	0.6436 & 0.7155 & 0.8764 \\ \hline
+BiLSTM                                 & 0.7259 & 0.5182 & 0.5269 & 0.8895 & 0.8075 &	0.6652 & 0.6521 & 0.8808 \\ \hline
+TCN                                    & 0.6644	& 0.5442 & 0.4785 & 0.9096 & 0.8938 & 0.7090 & 0.7989	& 0.9030 \\ \hline
+TRA                                    & 0.5500 & 0.4242 & 0.3025 & 0.9226 & 0.7144 &	0.5235 & 0.5103 & 0.9167  \\ \hline
+ICEEMDAN-ANN                           & 1.1108 & 0.8641 & 1.2339 & 0.7388 & 1.1857 & 0.9546 & 1.4060 & 0.7741  \\ \hline
+ICEEMDAN-CNN                           & 0.6166 & 0.4481 & 0.3802 & 0.9207 & 0.7601 &	0.6021 & 0.5778 & 0.9018   \\ \hline
+ICEEMDAN-LSTM                          & 0.6661 & 0.4831 & 0.4436 & 0.9071 & 0.8457 &	0.6704 & 0.7152 & 0.9027 \\ \hline
+ICEEMDAN-GRU                           & 0.5916	& 0.4555 & 0.3500 & 0.9249 & 0.6540 &	0.5237 & 0.4277	& 0.9360  \\ \hline
+ICEEMDAN-BiLSTM                        & 0.6005	& 0.4736 & 0.3606 & 0.9204 & 0.8020 &	0.6611 & 0.6432	& 0.9047  \\ \hline
+ICEEMDAN-TCN                           & 0.5006	& 0.3841 & 0.2506 & 0.9308 & 0.5817 &	0.4765 & 0.3384 & 0.9208  \\ \hline
+\textbf{Proposed approach}                              & \textbf{0.4470} & \textbf{0.3464} & \textbf{0.1998} & \textbf{0.9616} & \textbf{0.4895} & \textbf{0.3776} & \textbf{0.2396} & \textbf{0.9596}  \\ \hline
+
+\end{tabular}}
+\end{table}
+
+\begin{figure}
+\includegraphics[width=0.95\columnwidth]{Figures/TRA_Gulf_proposed.png}
+\caption{Prediction result of proposed ICEEMDAN-TRA model and other hybrid models at wind farm 2}
+\label{tra_fig 7}
+\end{figure}
+
+\begin{figure}
+\centerline{\includegraphics[width=\columnwidth]{Figures/TRA_Gulf_Error_Prposed.png}}
+\caption{Comparison of forecasting error of wind speed: ICEEMDAN-TRA and other reference models for wind farm 2}
+\label{tra_fig 8}
+\end{figure}
+
+\begin{table}
+\centering
+\caption{Percentage improvement of ICEEMDAN-TRA model relative to all the reference hybrid models for all time horizons at wind farm 2}
+\label{tra_Table 6}
+\scalebox{0.98}{
+\begin{tabular}{|l|ccc|ccc|}
+\hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{5-min}}         & \multicolumn{3}{c|}{\textbf{15-min}}          \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 54\%          & 54\%         & 79\%         & 52\%          & 51\%         & 77\%            \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 48\%          & 41\%         & 73\%         & 31\%          & 25\%         & 52\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 40\%          & 36\%         & 64\%         & 34\%          & 34\%         & 57\%             \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     &42\%          & 39\%         & 67\%         & 39\%          & 36\%         & 62\%           \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 34\%          & 26\%         & 57\%         & 34\%          & 32\%         & 57\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 33\%          & 29\%         & 55\%         & 20\%          & 10\%         & 35\%                \\ \hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{30-min}}         & \multicolumn{3}{c|}{\textbf{1-hour}}        \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 60\%          & 60\%         & 84\%         & 59\%          & 60\%         & 83\%          \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 28\%          & 23\%         & 47\%         & 36\%          & 37\%         & 59\%     \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 33\%          & 28\%         & 55\%         & 42\%          & 44\%         & 66\%        \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     & 24\%          & 24\%         & 43\%         & 25\%          & 28\%         & 44\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 26\%          & 27\%         & 45\%         & 39\%          & 43\%         & 63\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 11\%          & 10\%         & 20\%         & 16\%          & 21\%         & 29\%             \\ \hline   
+\end{tabular}}
+\end{table}
+
+\subsection{Case study 2: Performance of the proposed hybrid ICEEMDAN-TRA model at wind farm 2}
+Following the successful evaluation of the ICEEMDAN-TRA model in case study 1, this study examines its performance at wind farm 2, providing further insights into its effectiveness. The results are shown in the Tables \ref{tra_Table 5} and \ref{tra_Table 6}, and illustrated graphically in Figures \ref{tra_fig 7} and \ref{tra_fig 8}. The predicted wind speeds obtained from each hybrid model are compared and illustrated in Figure \ref{tra_fig 7}, with the corresponding percentage improvements of the proposed hybrid model relative to the other models summarized in Table \ref{tra_Table 6}. 
+Based on the results presented in Tables \ref{tra_Table 5} and \ref{tra_Table 6}, supplemented by the visual representations in Figures \ref{tra_fig 7} and \ref{tra_fig 8}, yields the following key observations:
+The transformer model achieves better results in this wind farm  also among all individual models. The RMSE, MAE, MSE values of transformer model are less as compared to remaining individual models. Transformer model outperforms the second-best individual model by approximately 39\% for 5-mins, 38\% for 15-mins, 37\% for 30-mins, and 36\% for 1-hour at wind farm 2 for the MSE. Among all hybrid models, the ICEEMDAN-TRA model consistently achieves superior results for all time intervals, solidifying its position as a leading model. The proposed hybrid model outperforms the second-best hybrid model by approximately 33\%, 29\%, and 55\% for 5-min and 16\%, 21\%, and 29\% for 1-hour in terms of RMSE, MAE, and MSE at wind farm 2. The percentage improvement of the proposed hybrid model over other models is shown in Table \ref{tra_Table 6}. The RMSE values of the proposed hybrid model ranged from 0.2156 for 5-min to 0.4895 for 1-hour ahead WSF. Similarly, the MAE values ranged from 0.1820 for 5-min to 0.3776 for 1-hour ahead WSF. The MSE values ranged from 0.0464 for 5-min to 0.2396 for 1-hour ahead WSF. The $R^2$ score values of the proposed hybrid model ranged from 0.9889 for 5-min to 0.9596 for 1-hour ahead WSF. The $R^2$ score values for the other models are presented in Table \ref{tra_Table 5}. 
+
+At both sites, the proposed hybrid model surpassed all other models, achieving high $R^2$ values and low error rates, which highlights its potential for accurate and reliable predictions. The combination of the transformer model with ICEEMDAN decomposition proved to be a highly effective approach, resulting in a significant improvement in the proposed model's predictive performance and making it the top-performing model for ultra-short-term and short-term forecasting among all the WSF models.
+
+
+
+\section{Summary}
+WSF is required for reliable wind energy management. Because wind speed data is nonlinear, modern methods frequently employ DL methods to improve forecasting efficiency. These DL approaches, however, have drawbacks such as a long training time, a limited receptive field, and poor interpretation of non-linear characteristics. Addressing these, a hybrid ICEEMDAN-TRA model is developed in this research work. ICEEMDAN is utilized for denoising of the input data, and the transformer with parallelization capability enhanced training and feature interpretation for the WSF. The proposed hybrid model performance is tested using two experimental studies across different time horizons. Two experimental studies are conducted, each using a different set of WSF models, and the results of both studies consistently indicate that the proposed hybrid model achieves superior performance, exceeding all other models with a high degree of improvement. The significant improvement in forecasting accuracy achieved by the proposed hybrid model has important implications for wind energy applications, where accurate predictions of wind speeds are crucial for optimizing energy production and reducing costs.
