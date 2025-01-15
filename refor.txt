@@ -1,0 +1,351 @@
+\chapter{A novel hybrid wind speed forecasting using ICEEMDAN and Reformer model}
+
+\fancyhead[LE,LO]{\textit{\chaptername \ \thechapter : WSF using ICEEMDAN-Reformer model}}
+%\fancyhead[RE,LO]{Guides and tutorials}
+\fancyfoot[LE,LO]{\textit{NIT Andhra Pradesh}}
+\fancyfoot[CE,CO]{\thepage}
+\fancyfoot[RE,RO]{\textit{Dept.Electrical Engg.}}
+
+\label{sec:4}
+In this chapter, a novel hybrid methodology for wind speed forecasting (WSF) by combining improved complete ensemble empirical mode decomposition with adaptive noise (ICEEMDAN) and a memory-efficient Reformer (REF) model is proposed. This approach involves decomposing the input data intoo the noiseless data using the from the ICEEMDAN algorithm. The resulting sub-series are then processed through a Reformer model to forecast wind speed. The effectiveness and development of the proposed ICEEMDAN-REF model is validated using wind speed data from two distinct locations, Block Island and the Gulf Coast. Additionally, the proposed model is evaluated across four time horizons: 5-min, 15-min, 30-min, and 1-hour. 
+
+
+\section{Introduction}
+The self-attention mechanism of the Transformer model, introduced in Chapter 3, has been employed to acquire knowledge of complex patterns and dynamics in wind speed data. The Transformer model has shown impressive ability to capture long-range dependencies, outperforming other comparative models. However, it faces limitations such as high spatial and temporal complexities, restricted input-output sequences, and the high computational cost of training, especially for long sequence processing in WSF tasks. These challenges highlight a critical opportunity to enhance the Transformer model for more optimal WSF performance. As a result, in this chapter, a novel and hybrid ICEEMDAN-REF model for WSF is proposed to overcome the limitations identified in the ICEEMDAN-TRA model discussed in the Chapter 3. The following are the key contributions of this research work:
+
+\begin{itemize}
+\item {In this chapter a novel hybrid methodology known as ICEEMDAN-REF is proposed for accurate WSF}
+\item {To address the challenges of the CEEMDAN algorithm, including mode mixing, frequency aliasing, and residual noise, the ICEEMDAN algorithm is used to effectively denoise the input wind speed data.}
+\item{To address the challenges encountered with the Transformer model, including high spatial time complexities, restricted input-output sequences, and training time, a robust REF model is developed for effective WSF. The REF model is significantly more memory-efficient and exhibits faster processing times when handling long sequences in the WSF. This efficiency is achieved through the incorporation of LSH and reversible-residual layers.}
+\item {To validate the effectiveness of the proposed approach, the study conducted at two different wind farms using four different time horizons: 5-min, 15-min, 30-min, and 1-hour ahead WSF.}
+\end{itemize}
+
+This chapter is organized as follows: Section 2 provides a demonstration of the operational principles of the hybrid ICEEMDAN-REF methodology proposed. Section 3 presents the experimental results using two case studies and evaluation conducted. The final section summarizes the key findings and implications of this study.
+
+
+\section{Proposed methodology}
+In this study, a novel and hybrid model ICEEMDAN based REF model for the WSF is proposed. The proposed methodology is structured into two distinct stages: a) the elimination of noise from the raw wind speed data using ICEEMDAN method and b) WSF using the Reformer (REF) model. Figure \ref{ref_proposed} shows the sequential representation of the proposed ICEEMDAN-REF model. The ICEEMDAN decomposition method is used for eliminating the noise present in wind speed data and is discussed in Section 3.2.1. The description of proposed REF model for the WSF provided below:
+
+\begin{figure}
+\centering
+\centerline{\includegraphics[width= 0.95\columnwidth]{Figures/ref_flowchart.eps}}
+\caption{Framework of the proposed ICEEMDAN-REF model}
+\label{ref_proposed}
+\end{figure}
+
+%\subsection{ICEEMDAN method for the wind speed data decomposition}
+%The complexity and instability of wind speed sequences pose a significant challenge to the effective WSP. Additionally, the presence of substantial noise in the raw data can negatively impact the efficacy of predictive models. Consequently, it is necessary to decompose wind speed data in order to produce decomposed data that is free of noise. Thus, the proposed methodology employed ICEEMDAN model for the decomposition of wind speed signal. The denoised wind speed is fed as an input to the forecasting stage. The description of the forecasting stage is provided below:
+
+\subsection{Proposed REF model for the WSF}
+\subsubsection{Issues with Transformer model} 
+RNN variations like LSTM and GRU have been used for sequential forecasting in the literature. These models are computationally expensive and have a restricted receptive field, which can impair their effectiveness in WSF. In chapter 3 the Transformer technique is proposed to address these restrictions. The Transformer model has been developed by removing repetition and introducing multi-head self-attention \cite{ref_30}. Parallel processing allowed the Transformer to handle bigger sequences, creating sophisticated models with less training time. Though Transformer models excel at handling longer sequences, they have the following limitations:  
+\begin{enumerate}
+\item Attention computation: Attention computations upon L-length sequences is $O(L^2)$ (in both time as well as in memory)
+\item Large number of layers: To facilitate back-propagation, the activations within all layers must be retained. As a result, a model comprising N-layers requires N times much more memory when compared with a single 	layer model.
+\item Depth of feed forward layers: The intermediary feed-forward layers tend to have greater depth when compared to the depth of attention activations. This comprises a significant amount of memory use.
+\end{enumerate}
+
+To address Transformer model limitations, a memory-efficient REF model has been developed for WSF. The REF model incorporates three key techniques such as: 1) LSH Attention, 2) Reversible layers, 3) Chunking. A comprehensive explanation of these techniques is provided in the subsequent subsections:
+\paragraph{LSH attention}
+In DL, attention mechanisms enable neural networks to focus on particular elements at each time step. In the Transformer model, three key types of attention mechanisms are utilized: encoder self-attention, masked decoder self-attention, and encoder-decoder attention. The conventional approach for attention in the Transformer model uses scaled dot-product, which can be defined mathematically as follows:
+\begin{equation}
+\label{ref_e6}
+Attention(X,Y,Z)=softmax (\frac{XY^T}{\sqrt{d_Y}})Z
+\end{equation}
+
+\textit{Where, X represents L Queries with dimension d, Y represents L Keys with dimension d, Z represents L Values with dimension d, L represents sequence length and d represents attention depth. }
+
+From the preceding equation, the computational as well as memory cost of performing multiplication $XY^T$, where the shape of the matrix is $[L, L]$, can be observed to be in $O(L^2)$ which indicates that memory is the primary bottleneck. The computation and storage of the entire matrix \( XY^T \) are unnecessary since the focus is on \( \text{softmax}(XY^T) \). This computation is primarily influenced by the most significant elements in a matrix that is usually sparse. Therefore, to optimize the search process, it is essential to focus solely on the keys Y that are in close proximity to the query X. The attention mechanism has been observed to identify the closest neighbor keys of a query, although with inadequate efficiency. Consequently, a nearest neighbor's search is necessary. The main development in the REF is the substitution of a dot-product attention mechanism by the LSH. This substitution has resulted in a notable decrease in computational complexity, from $O(L^2)$  to $O(L logL)$.
+
+The fundamental concept underlying LSH attention can be described as follows. The attention mechanism is modified by restricting the computation of attention to specific vectors in the X and Y matrices, instead of to all vectors, as shown in equation \ref{ref_e6} of the standard attention formula. To enhance the probability of dissimilar items being allocated to different buckets, repeated the aforementioned process several times.
+
+\begin{itemize}
+\item Obtain the X and Y matrices of LSH hashes.
+\item The standard attention is computed only with x and y vectors that belong to the same hash buckets.    
+\end{itemize}
+
+\paragraph{Reversible residual Network (RevNet)}
+Looking closely at the Transformer model's encoding and decoding blocks, the attention and feedforward layers are grouped into residual blocks \cite{ref_50}. ResNets, introduced in \cite{ref_45}, are a strong component used in NNs to address the vanishing gradient problem in DNNs. Because ResNets must store layer activations in memory for gradient calculation during backpropagation, memory use is a major issue. Results show a clear relationship between neural network size and memory resources needed to hold parameters. RevNet uses residual modules to tackle this problem. Revnet's architecture permits perfect reconstruction of each layer's activations from its follow-up activations. This feature permits backpropagation without memory activation storage. In Figure \ref{Rev}, residual and reversible modules are shown. The image shows how to calculate the block's inputs ($I_1$, $I_2$) from its outputs ($O_1$, $O_2$). The Transformer's second issue is N-layer Transformer network storage, which may be crucial for big N values. In the REF model, the RevNet idea integrates the attention and feed-forward layers. The attention layer is marked by A in Fig. \ref{Rev}, while the feed-forward layer is denoted by F. Reversible residual layers allow activation storage once during training instead of N times.
+
+\begin{figure}
+\centering
+\includegraphics[width=5 in]{Figures/RevNETT.eps}
+\caption{ResNet Modules (left) and RevNet Modules (right)}
+\label{Rev}
+\end{figure}
+
+\begin{align}
+\label{ref_e7}
+    O_1 = I_1 + A(I_2) \nonumber \\
+    O_2 = I_2 + F(O_1)
+\end{align}
+
+\paragraph{Chunking}
+The REF model's third efficacy improvement involves high-dimensional intermediary vectors in feedforward layers. Reversibility does not solve memory use because thicker layers require more memory. Feedforward layer calculations are independent by sequence position, therefore they can be chunked. This allows chunking of forward, backward, and reverse calculations. Traditional processing of this layer uses batch-based parallel execution of operations across all positions. Processing one chunk at a time reduces memory use.
+
+
+\begin{equation}
+\label{ref_e8}
+O_2 \textbf{=} [O_2^{(1)};\dots;O_2^{(c)}] \textbf{=} [I_2^{(1)}+FeedForward(O_1^{(1)} );\dots;I_2^{(c)}+FeedForward(O_1^{(c)})]     
+\end{equation}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=5 in]{Figures/reformer.eps}
+\caption{Architecture of REF model}
+\label{REF}
+\end{figure}
+
+\subsubsection{Architecture of the REF model}
+In this study, the REF model as shown in the Fig. \ref{REF}, is used for WSF. REF composed of two core elements: encoder and decoder. \\
+\textbf{Encoder:}\\
+In Encoder, historical wind speed data is the input, undergoing a sequence of transformations. It first passes through a stack of fully connected layers, extracting significant features from the wind speed dataset. Subsequently, positional encoding is applied to retain important temporal information, ensuring the model comprehends the sequential order of data. Efficient LSH attention is then applied which divides the input sequence into manageable chunks or segments, allowing the model to concentrate on the most relevant information within these segments. By efficiently capturing dependencies within these local segments, LSH attention significantly reduces the computational burden of conventional self-attention mechanisms while preserving the model's capacity to recognize temporal patterns in the wind speed data. The resulting output from the LSH attention mechanism is then augmented with the original input via residual connections, and layer normalization ensures that the model maintains stable and effective training throughout the learning process. Then, this output is passed through the feedforward chunking process, enabling efficient handling of long sequence. Processing one chunk at a time reduces the memory use through the Eq. \ref{ref_e8}. This result is passed through the RevNet module which integrates the attention and feedforward layers effectively. The proposed REF model is designed to handle long sequences more efficiently by using a reversible network architecture and utilizing the LSH technique. The mathematical formulation of RevNet is represented in the Eq. \ref{ref_e7}. This enables the model to process longer sequences without significantly increasing computational requirements and module helps in the storage of activation once during the training instead of N number of times, where N is the no. of encoder layers. Importantly, this encoder architecture comprises multiple identical layers, each repeating the sequence of operations, ultimately yielding a sequence of encoded representations. These operations collectively generate highly informative encoded representations, combining feature extraction, efficient dependency capture, and information preservation to generate input to the decoder network. \\
+\textbf{Decoder:}\\
+In the REF model's Decoder, the operations begins with the last recorded wind speed measurement subjected to a fully connected layer for feature extraction, then positional encoding to maintain temporal information. The residual layer is present to ensure the training stability. The LSH attention is then applied, taking inputs from the preceding addition and normalization step and the Encoder's output, effectively capturing dependencies within localized segments. Subsequent addition and normalization ensure consistent activations for the stable training. The data is further processed through chunking for memory optimization and refinement. The RevNet module integrates attention and feedforward layers efficiently, storing activations once during training. Finally, a linear dense layer generates wind speed predictions, aligning with the desired forecasting horizon as shown in the Figure. \ref{ref_proposed}.
+
+
+
+
+\section{Experimental results and discussions}
+This section evaluates the performance of the proposed ICEEMDAN-REF model for WSF across four different time horizons at two distinct sites.
+
+\subsection{Hyperparameter configuration of WSF models}
+To assess the proposed ICEEMDAN-REF model performance, the models are separated into two distinct categories. The initial category of models consists of individual models, such as ANN, CNN, LSTM, GRU, BiLSTM, TCN and TRA. The hybridization of these models has been achieved through the utilization of an ICEEMDAN data decomposition method, resulting in the creation of a second category of hybrid models. The hyperparameter configuration of all the reference models is shown in the Table \ref{pa_tra}.  Table \ref{pa} presents the hyperparameter configuration of the proposed model.
+
+\begin{table}[h]
+\caption{Configuration of the proposed Reformer model}
+\label{pa}
+\centering
+\scalebox{0.9}{
+\begin{tabular}{p{3cm} p{4cm}p{9cm}}
+\hline
+\textbf{Model} & \textbf{Parameters} & \textbf{Values} \\
+\hline
+
+Reformer & epochs & 100\\
+& Encoder layers  & 3 \\
+&Decoder layers & 3 \\
+&Bucket size & 2\\
+& Heads & 4 \\
+& Attention mechanism & LSH attention \\
+\hline
+\end{tabular}}
+
+\end{table}
+
+
+
+\begin{table}[]
+\centering
+\caption{Comparison of performance indices between proposed ICEEMDAN-REF model and other individual and their hybrid models for all time intervals at wind farm 1}
+\label{ref_t1}
+\scalebox{0.8}{
+\begin{tabular}{l|cccc|cccc}
+\hline
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}}                           & \multicolumn{4}{c|}{\textbf{5-mins}}                                                                                     & \multicolumn{4}{c}{\textbf{15-mins}}                                                                                    \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                                                          & \multicolumn{1}{c}{\textbf{ RMSE }} & \multicolumn{1}{c}{\textbf{ MAE }} & \multicolumn{1}{c}{\textbf{ MSE }} & \textbf{$R^2$} & \multicolumn{1}{c}{\textbf{ RMSE }} & \multicolumn{1}{c}{\textbf{ MAE }} & \multicolumn{1}{c}{\textbf{ MSE }} & \textbf{  $R^2$  } \\ \hline
+\textbf{ANN}                                                                    & \multicolumn{1}{c}{ 0.9049 }        & \multicolumn{1}{c}{ 0.7392 }       & \multicolumn{1}{c}{ 0.8189 }       & 0.8905      & \multicolumn{1}{c}{ 1.2443 }        & \multicolumn{1}{c}{ 1.0421 }       & \multicolumn{1}{c}{ 1.5484 }       & 0.8244      \\ \hline
+\textbf{CNN}                                                                    & \multicolumn{1}{c}{0.6221}        & \multicolumn{1}{c}{0.4584}       & \multicolumn{1}{c}{0.3870}        & 0.9405      & \multicolumn{1}{c}{0.8183}        & \multicolumn{1}{c}{0.5462}       & \multicolumn{1}{c}{0.6696}       & 0.9105      \\ \hline
+\textbf{LSTM}                                                                   & \multicolumn{1}{c}{0.5660}        & \multicolumn{1}{c}{0.4582}       & \multicolumn{1}{c}{0.3203}       & 0.9422      & \multicolumn{1}{c}{0.7120}        & \multicolumn{1}{c}{0.4857}       & \multicolumn{1}{c}{0.5069}       & 0.9241      \\ \hline
+\textbf{GRU}                                                                    & \multicolumn{1}{c}{0.7094}        & \multicolumn{1}{c}{0.6023}       & \multicolumn{1}{c}{0.5033}       & 0.9132      & \multicolumn{1}{c}{0.7557}        & \multicolumn{1}{c}{0.5087}       & \multicolumn{1}{c}{0.5711}       & 0.9169      \\ \hline
+\textbf{BiLSTM}                                                                 & \multicolumn{1}{c}{0.5089}        & \multicolumn{1}{c}{0.3853}       & \multicolumn{1}{c}{0.259}        & 0.9588      & \multicolumn{1}{c}{0.6944}        & \multicolumn{1}{c}{0.4767}       & \multicolumn{1}{c}{0.4822}       & 0.9341      \\ \hline
+\textbf{TCN}                                                                    & \multicolumn{1}{c}{0.4596}        & \multicolumn{1}{c}{0.3012}       & \multicolumn{1}{c}{0.2112}       & 0.9612      & \multicolumn{1}{c}{0.6421}        & \multicolumn{1}{c}{0.4597}       & \multicolumn{1}{c}{0.4123}       & 0.9472      \\ \hline
+\textbf{TRA}                                                                    & \multicolumn{1}{c}{0.3616}        & \multicolumn{1}{c}{0.2804}       & \multicolumn{1}{c}{0.1308}       & 0.9671      & \multicolumn{1}{c}{0.5798}        & \multicolumn{1}{c}{0.4025}       & \multicolumn{1}{c}{0.3361}       & 0.9578      \\ \hline
+\textbf{REF}                                                                    & \multicolumn{1}{c}{0.3211}        & \multicolumn{1}{c}{0.2447}       & \multicolumn{1}{c}{0.1031}       & 0.9712      & \multicolumn{1}{c}{0.4785}        & \multicolumn{1}{c}{0.3582}       & \multicolumn{1}{c}{0.2290}       & 0.9582      \\ \hline
+\textbf{ICEEMDAN-ANN}                                                           & \multicolumn{1}{c}{0.8523}        & \multicolumn{1}{c}{0.7395}       & \multicolumn{1}{c}{0.7265}       & 0.9041      & \multicolumn{1}{c}{0.8212}        & \multicolumn{1}{c}{0.6621}       & \multicolumn{1}{c}{0.6743}       & 0.9294      \\ \hline
+\textbf{ICEEMDAN-CNN}                                                           & \multicolumn{1}{c}{0.5623}        & \multicolumn{1}{c}{0.4398}       & \multicolumn{1}{c}{0.3162}       & 0.9425      & \multicolumn{1}{c}{0.7302}        & \multicolumn{1}{c}{0.5599}       & \multicolumn{1}{c}{0.5333}       & 0.9385      \\ \hline
+\textbf{ICEEMDAN-LSTM}                                                          & \multicolumn{1}{c}{0.4974}        & \multicolumn{1}{c}{0.3864}       & \multicolumn{1}{c}{0.2474}       & 0.9477      & \multicolumn{1}{c}{0.7186}        & \multicolumn{1}{c}{0.5499}       & \multicolumn{1}{c}{0.5163}       & 0.9400      \\ \hline
+\textbf{ICEEMDAN-GRU}                                                           & \multicolumn{1}{c}{0.5802}        & \multicolumn{1}{c}{0.5111}       & \multicolumn{1}{c}{0.3366}       & 0.9310      & \multicolumn{1}{c}{0.6166}        & \multicolumn{1}{c}{0.4990}       & \multicolumn{1}{c}{0.3802}       & 0.9675      \\ \hline
+\textbf{ICEEMDAN-BiLSTM}                                                        & \multicolumn{1}{c}{0.4281}        & \multicolumn{1}{c}{0.3862}       & \multicolumn{1}{c}{0.1833}       & 0.9661      & \multicolumn{1}{c}{0.6388}        & \multicolumn{1}{c}{0.5032}       & \multicolumn{1}{c}{0.4081}       & 0.9767      \\ \hline
+\textbf{ICEEMDAN-TCN}                                                           & \multicolumn{1}{c}{0.3537}        & \multicolumn{1}{c}{0.2532}       & \multicolumn{1}{c}{0.1251}       & 0.9788      & \multicolumn{1}{c}{0.4896}        & \multicolumn{1}{c}{0.4072}       & \multicolumn{1}{c}{0.2397}       & 0.9685      \\ \hline
+\textbf{ICEEMDAN-TRA} & \multicolumn{1}{c}{0.2716}        & \multicolumn{1}{c}{0.2022}       & \multicolumn{1}{c}{0.0737}       & 0.9835      & \multicolumn{1}{c}{0.4207}        & \multicolumn{1}{c}{0.3622}       & \multicolumn{1}{c}{0.1770}       & 0.9797      \\ \hline
+\textbf{Proposed Approach} & \multicolumn{1}{c}{\textbf{0.2091}}        & \multicolumn{1}{c}{\textbf{0.1484}}       & \multicolumn{1}{c}{\textbf{0.0437}}       & \textbf{0.9903}      & \multicolumn{1}{c}{\textbf{0.3648}}        & \multicolumn{1}{c}{\textbf{0.2752}}       & \multicolumn{1}{c}{\textbf{0.1331}}       & \textbf{0.9874}      \\ \hline
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}}                           & \multicolumn{4}{c|}{\textbf{30-mins}}                                                                                    & \multicolumn{4}{c}{\textbf{1-hour}}                                                                                     \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                                                          & \multicolumn{1}{c}{\textbf{RMSE}} & \multicolumn{1}{c}{\textbf{MAE}} & \multicolumn{1}{c}{\textbf{MSE}} & \textbf{$R^2$} & \multicolumn{1}{c}{\textbf{RMSE}} & \multicolumn{1}{c}{\textbf{MAE}} & \multicolumn{1}{c}{\textbf{MSE}} & \textbf{$R^2$} \\ \hline
+\textbf{ANN}                                                                    & \multicolumn{1}{c}{1.4541}        & \multicolumn{1}{c}{1.1121}       & \multicolumn{1}{c}{2.1143}       & 0.6961      & \multicolumn{1}{c}{2.1409}        & \multicolumn{1}{c}{1.5372}       & \multicolumn{1}{c}{4.5833}       & 0.5562      \\ \hline
+\textbf{CNN}                                                                    & \multicolumn{1}{c}{0.9733}        & \multicolumn{1}{c}{0.7528}       & \multicolumn{1}{c}{0.9473}       & 0.8934      & \multicolumn{1}{c}{1.4290}        & \multicolumn{1}{c}{1.1352}       & \multicolumn{1}{c}{2.0421}       & 0.7585      \\ \hline
+\textbf{LSTM}                                                                   & \multicolumn{1}{c}{0.8858}        & \multicolumn{1}{c}{0.6589}       & \multicolumn{1}{c}{0.7846}       & 0.9115      & \multicolumn{1}{c}{1.2667}        & \multicolumn{1}{c}{0.9745}       & \multicolumn{1}{c}{1.6046}       & 0.8567      \\ \hline
+\textbf{GRU}                                                                    & \multicolumn{1}{c}{0.8819}        & \multicolumn{1}{c}{0.6098}       & \multicolumn{1}{c}{0.7777}       & 0.9069      & \multicolumn{1}{c}{1.2179}        & \multicolumn{1}{c}{0.9101}       & \multicolumn{1}{c}{1.4834}       & 0.8818      \\ \hline
+\textbf{BiLSTM}                                                                 & \multicolumn{1}{c}{0.8335}        & \multicolumn{1}{c}{0.5631}       & \multicolumn{1}{c}{0.6947}       & 0.9201      & \multicolumn{1}{c}{1.2569}        & \multicolumn{1}{c}{0.9557}       & \multicolumn{1}{c}{1.5797}       & 0.8727      \\ \hline
+\textbf{TCN}                                                                    & \multicolumn{1}{c}{0.8091}        & \multicolumn{1}{c}{0.5386}       & \multicolumn{1}{c}{0.6546}       & 0.9237      & \multicolumn{1}{c}{1.1815}        & \multicolumn{1}{c}{0.9038}       & \multicolumn{1}{c}{1.3959}       & 0.8831      \\ \hline
+\textbf{TRA}                                                                    & \multicolumn{1}{c}{0.7045}        & \multicolumn{1}{c}{0.5057}       & \multicolumn{1}{c}{0.4963}       & 0.9393      & \multicolumn{1}{c}{1.1646}        & \multicolumn{1}{c}{0.8069}       & \multicolumn{1}{c}{1.3563}       & 0.8967      \\ \hline
+\textbf{REF}                                                                    & \multicolumn{1}{c}{0.5912}        & \multicolumn{1}{c}{0.4245}       & \multicolumn{1}{c}{0.3495}       & 0.9472      & \multicolumn{1}{c}{0.7585}        & \multicolumn{1}{c}{0.6488}       & \multicolumn{1}{c}{0.5783}       & 0.9221      \\ \hline
+\textbf{ICEEMDAN-ANN}                                                           & \multicolumn{1}{c}{1.2037}        & \multicolumn{1}{c}{0.9144}       & \multicolumn{1}{c}{1.4489}       & 0.8606      & \multicolumn{1}{c}{1.3529}        & \multicolumn{1}{c}{1.1098}       & \multicolumn{1}{c}{1.8304}       & 0.7927      \\ \hline
+\textbf{ICEEMDAN-CNN}                                                           & \multicolumn{1}{c}{0.8439}        & \multicolumn{1}{c}{0.5997}       & \multicolumn{1}{c}{0.7122}       & 0.9220      & \multicolumn{1}{c}{0.9086}        & \multicolumn{1}{c}{0.7029}       & \multicolumn{1}{c}{0.8255}       & 0.9054      \\ \hline
+\textbf{ICEEMDAN-LSTM}                                                          & \multicolumn{1}{c}{0.8225}        & \multicolumn{1}{c}{0.5806}       & \multicolumn{1}{c}{0.6766}       & 0.9300      & \multicolumn{1}{c}{0.9122}        & \multicolumn{1}{c}{0.6943}       & \multicolumn{1}{c}{0.8321}       & 0.8938      \\ \hline
+\textbf{ICEEMDAN-GRU}                                                           & \multicolumn{1}{c}{0.6694}        & \multicolumn{1}{c}{0.5349}       & \multicolumn{1}{c}{0.4481}       & 0.9567      & \multicolumn{1}{c}{0.8357}        & \multicolumn{1}{c}{0.6620}       & \multicolumn{1}{c}{0.6985}       & 0.9136      \\ \hline
+\textbf{ICEEMDAN-BiLSTM}                                                        & \multicolumn{1}{c}{0.8102}        & \multicolumn{1}{c}{0.5855}       & \multicolumn{1}{c}{0.6564}       & 0.9406      & \multicolumn{1}{c}{0.7311}        & \multicolumn{1}{c}{0.5480}       & \multicolumn{1}{c}{0.5345}       & 0.9451      \\ \hline
+\textbf{ICEEMDAN-TCN}                                                           & \multicolumn{1}{c}{0.6242}        & \multicolumn{1}{c}{0.4791}       & \multicolumn{1}{c}{0.3896}       & 0.9481      & \multicolumn{1}{c}{0.6705}        & \multicolumn{1}{c}{0.5242}       & \multicolumn{1}{c}{0.4495}       & 0.9464      \\ \hline
+\textbf{ICEEMDAN-TRA} & \multicolumn{1}{c}{0.5780}         & \multicolumn{1}{c}{0.4383}       & \multicolumn{1}{c}{0.3341}       & 0.9585      & \multicolumn{1}{c}{0.6234}        & \multicolumn{1}{c}{0.4855}       & \multicolumn{1}{c}{0.3887}       & 0.9545      \\ \hline
+\textbf{Proposed Approach} & \multicolumn{1}{c}{\textbf{0.4946}}         & \multicolumn{1}{c}{\textbf{0.3501}}       & \multicolumn{1}{c}{\textbf{0.2446}}       & \textbf{0.9744}      & \multicolumn{1}{c}{\textbf{0.5278}}        & \multicolumn{1}{c}{\textbf{0.3585}}       & \multicolumn{1}{c}{\textbf{0.2786}}       & \textbf{0.9729}      \\ \hline
+\end{tabular}}
+\end{table}
+
+
+\begin{table}
+\centering
+\caption{Percentage improvement of ICEEMDAN-REF model relative to all the reference hybrid models for all time horizons at wind farm 1}
+\label{ref_t2}
+\scalebox{0.98}{
+\begin{tabular}{|l|ccc|ccc|}
+\hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{5 mins}}         & \multicolumn{3}{c|}{\textbf{15 mins}}          \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 75\%          & 80\%         & 94\%         & 56\%          & 58\%         & 80\%            \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 63\%          & 66\%         & 86\%         & 50\%          & 51\%         & 75\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 58\%          & 62\%         & 82\%         & 49\%          & 50\%         & 74\%             \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     &64\%          & 71\%         & 87\%         & 41\%          & 45\%         & 65\%           \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 51\%          & 62\%         & 76\%         & 43\%          & 45\%         & 67\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 41\%          & 41\%         & 65\%         & 25\%          & 32\%         & 44\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TRA}                     & 23\%          & 27\%         & 41\%         & 13\%          & 24\%         & 25\%                \\ \hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{30 mins}}         & \multicolumn{3}{c|}{\textbf{1 hour}}        \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 59\%          & 62\%         & 83\%         & 61\%          & 68\%         & 85\%          \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 41\%          & 42\%         & 66\%         & 42\%          & 49\%         & 66\%     \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 40\%          & 40\%         & 64\%         & 42\%          & 48\%         & 67\%        \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     & 26\%          & 35\%         & 45\%         & 37\%          & 46\%         & 60\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 39\%          & 40\%         & 63\%         & 28\%          & 35\%         & 48\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 21\%          & 27\%         & 37\%         & 21\%          & 32\%         & 38\%             \\ \hline 
+\textbf{Proposed   Vs ICEEMDAN-TRA}                     & 14\%          & 20\%         & 27\%         & 15\%          & 26\%         & 28\%                \\ \hline
+\end{tabular}}
+\end{table}
+
+
+\subsection{Case study 1: Performance of the proposed hybrid ICEEMDAN-REF model at wind farm 1}
+The data from wind farm 1 has been utilized to evaluate the hybrid model proposed along with different reference models. The results are shown in Tables \ref{ref_t1} and \ref{ref_t2}, and visually depicted in Figures. \ref{ref_f4} and \ref{ref_f5}. According to the results, the proposed ICEEMDAN-REF model dominated all other individual and hybrid models in terms of WSF performance. Figure. \ref{ref_f5} presents a comparison of the forecasting errors of ICEEMDAN-REF model and other hybrid models at wind farm 1. And Fig. \ref{ref_f4} illustrates the results of the proposed model alongside the predictions of hybrid models across time horizons. From Tables \ref{ref_t1} and \ref{ref_t2}, as well as the illustration in Figures. \ref{ref_f4} and \ref{ref_f5}, it can be summarized as follows:
+
+The experimental study included different comparative models such as TCN with a temporal and spatial extraction of features, CNN with spatial feature extraction, BiLSTM models with bidirectional temporal feature extraction, LSTM and GRU with temporal feature extraction. The Table \ref{ref_t1} clearly indicates the REF model has low MSE, MAE, and RMSE error values and a high $R^2$ score value among all first group models. For 5-min, 15-min, 30-min, and 1-hour ahead WSF, the REF model’s RMSE values are 0.3211, 0.4785, 0.5912, and 0.7585 respectively. Similarly, from the table, the MAE values for the individual REF model proposed are 0.2447, 0.3582, 0.4245, and 0.6488 respectively. While the REF model's performance metrics remain stable from 5-min to 1-hours ahead WSF, those of the other models depreciate significantly during this period. Next the TRA model shows the second best performance among individual models. The results indicate that ANN consistently ranks last across all time intervals. With respect to MSE, the REF model is approximately 21\%, 32\%, 30\%, and 57\% superior to the TRA model at 5-min, 15-min, 30-min, and 1-hour intervals, respectively. Comparative analysis of Table \ref{ref_t1} revealed that, with respect to $R^2$ scores, the REF model surpassed the remaining individual models. The results indicate that, unlike other individual models, the $R^2$ score consistently exceeds 0.92 across all the time intervals. While individual models captured various characteristics, such as spatial and temporal features, the TRA model's robust principles led to even better results. Its self-attention mechanism allowed it to effectively identify long-term dependencies and capture complex relationships within the wind speed data. However, with the improvements made to the TRA architecture, the proposed REF model, featuring robust LSH attention and residual layers, outperformed the TRA model in WSF. 
+
+\begin{figure}
+\centering
+\includegraphics[width= \columnwidth]{Figures/RF_Block_Proposed.png}
+\caption{Prediction result of proposed ICEEMDAN-REF model and other hybrid models at wind farm 1}
+\label{ref_f4}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.95\columnwidth]{Figures/RF_Block_Error_proposed.png}
+\caption{Comparison of forecasting error of wind speed: ICEEMDAN-REF and other reference models for wind farm 1}
+\label{ref_f5}
+\end{figure}
+
+However, the inherent noise present in the input wind speed data negatively impacts the performance of the WSF. To overcome this limitation and improve forecasting accuracy, ICEEMDAN algorithm is used to denoise the input wind speed data. This process of decomposition yields a second group of hybrid models. Table \ref{ref_t1} clearly demonstrates that the hybrid models outperform the individual models. According to Table \ref{ref_t1}, the performance metrics of the comparative hybrid models still remain significantly high. Though the accuracy of the hybrid models is superior than the individual models, it is inconsistent across all time intervals. From the Table \ref{ref_t1}, results indicate proposed ICEEMDAN-REF model outperforms all other hybrid models. Table \ref{ref_t1} shows RMSE, MAE, MSE and $R^2$ score values of proposed ICEEMDAN-REF model and all hybrid models for WSF at different time intervals. The corresponding RMSE values of the proposed model obtained across these intervals are 0.2091, 0.3648, 0.4946, and 0.5278, respectively. Similarly, the MAE values for all these time intervals at wind farm 1 are 0.1484, 0.2752, 0.3501, and 0.3585. At the same time, the proposed ICEEMDAN-REF model exhibits consistently high $R^2$-score values i.e., above 0.97 across all time intervals at wind farm 1, as shown by the metrics shown in Table \ref{ref_t1}.
+
+Comparing the improvement percentages, the proposed ICEEMDAN-REF model outperformed the REF model in terms of MSE by 58% for the 5-minute interval, 42\% for the 15-minute interval, 30\% for the 30-minute interval, and 52\% for the 1-hour interval. The study also found that, across all time intervals, the ICEEMDAN-TRA model exhibited the second-best performance among all hybrid models. In contrast, the ICEEMDAN-ANN model ranked last in performance among the evaluated hybrid models. In terms of MSE, the ICEEMDAN-REF model showed a percentage improvement over the second-best model, ICEEMDAN-TRA, of 41\% for the 5-minute interval, 25\% for the 15-minute interval, 27\% for the 30-minute interval, and 28\% for the 1-hour interval. Table \ref{ref_t2} illustrates the percentage improvement achieved by the proposed model compared to other hybrid models at wind farm 1. The line plots in Figure \ref{ref_f4} show how the predictions of each model align with the actual data over time. Analyzing these plots reveals that the proposed model consistently outperforms others across all time intervals. As the time interval increases, the non-linearity in wind speed data also increases, making the model more sensitive to temporal fluctuations and long-term dependencies. This heightened complexity leads to a greater error rate in the reference models, beyond the normal error escalation associated with longer intervals. However, the proposed ICEEMDAN-REF model, with its robust capabilities, consistently maintained its superiority across all time intervals, demonstrating its efficiency in handling the increasing complexity of WSF.
+
+
+
+
+
+
+
+\subsection{Case study 2: Performance of the proposed hybrid ICEEMDAN-REF model at wind farm 2}
+After evaluating the performance of proposed model at wind farm 1 data, wind farm 2 is selected for subsequent evaluation owing to its divergent characteristics. This approach allows for a thorough evaluation of the proposed model's adaptability and robustness in different wind farm environments. The following sections will present a detailed analysis of the experimental results at wind farm 2.
+
+\begin{table}[]
+\centering
+\caption{Comparison of performance indices between proposed ICEEMDAN-REF model and other individual and their hybrid models for all time intervals at wind farm 2}
+\label{ref_t5}
+\scalebox{0.80}{
+\begin{tabular}{l|cccc|cccc}
+\hline
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}} & \multicolumn{4}{c|}{\textbf{5-min}}        & \multicolumn{4}{c}{\textbf{15-min}}             \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                       & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     \\ \hline
+ANN                                     & 0.5987 & 0.4868 & 0.3585 & 0.8248 & 1.0866 & 0.8435 & 1.1807 & 0.7559  \\ \hline
+CNN                                     & 0.4350 & 0.3492 & 0.1892	& 0.9385 & 0.8390 &	0.6721 & 0.7040	 & 0.8601   \\ \hline
+LSTM                                        & 0.4706 & 0.4034	& 0.2215 & 0.9207 &	0.6971	& 0.5400	& 0.4859	& 0.9026  \\ \hline
+GRU                                        & 0.4583 & 0.3714 & 0.2100 & 0.9230 & 0.7082	& 0.5751 & 0.5015 & 0.9002   \\ \hline
+BiLSTM                                        & 0.4521 & 0.3584 & 0.2044 & 0.9325	& 0.6675 & 0.5338	& 0.4456 & 0.9131  \\ \hline
+TCN                                        & 0.3431	& 0.2861 & 0.1276 & 0.9433 & 0.6272 & 0.5006 & 0.4264 & 0.9218  \\ \hline
+TRA                                & 0.2795	& 0.2162 & 0.0781 & 0.9519 & 0.5130 & 0.3775 & 0.2632 & 0.9386  \\ \hline
+REF                                & 0.2252	& 0.1658 & 0.0507 & 0.9674 & 0.4524 & 0.3153 & 0.2047 & 0.9444  \\ \hline
+ICEEMDAN-ANN                         & 0.4723 & 0.3961 & 0.2230 & 0.9647 & 0.8543 & 	0.6458 & 0.7299 & 0.8960  \\ \hline
+ICEEMDAN-CNN                              & 0.4133 & 0.3105 & 0.1708 & 0.9753 & 0.5963 & 0.4240 & 0.3555 &	0.9541  \\ \hline
+ICEEMDAN-LSTM                               & 0.3568 & 0.2824 & 0.1273 & 0.9806 & 0.6247 & 0.4844 & 0.3902 & 0.9358 \\ \hline
+ICEEMDAN-GRU                               & 0.3723 & 0.2997 & 0.1386 & 0.9788 & 0.6712 & 0.4992 & 0.4505 & 0.9335  \\ \hline
+ICEEMDAN-BilSTM                               & 0.3276 & 0.2449 & 0.1074 & 0.9877 & 0.6244 & 0.4706 & 0.3899 & 0.9452  \\ \hline
+ICEEMDAN-TCN                               & 0.3198 & 0.2561 & 0.1023 & 0.9879 & 0.5108	& 0.3557 & 0.2609 & 0.9497  \\ \hline
+ICEEMDAN-TRA                             & 0.2156 & 0.1820 & 0.0464  & 0.9889 & 0.4111 & 0.3185 & 0.1690 & 0.9681 \\ \hline
+\textbf{Proposed Approach}                             & \textbf{0.1404} & \textbf{0.1006} & \textbf{0.0197}  & \textbf{0.9892} & \textbf{0.3292} & \textbf{0.2560} & \textbf{0.1084} & \textbf{0.9829}  \\ \hline
+
+\multicolumn{1}{c|}{\multirow{2}{*}{\textbf{Model}}} & \multicolumn{4}{c|}{\textbf{30-min}}       & \multicolumn{4}{c}{\textbf{1-hour}}        \\ \cline{2-9} 
+\multicolumn{1}{c|}{}                       & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     & \textbf{RMSE}   & \textbf{MAE}    & \textbf{MSE}    & \textbf{$R^2$}     \\ \hline
+ANN                                    & 1.2545 & 0.9684 & 1.5738 & 0.6686 & 1.4107 &	1.1104 & 1.9901 & 0.6559  \\ \hline
+CNN                                    & 0.8111	& 0.5975 & 0.6579 & 0.8621 & 0.9051 &	0.7127 & 0.8192 & 0.8604  \\ \hline
+LSTM                                   & 0.7453 & 0.5214 & 0.5555 & 0.8772 & 0.9129 &	0.7402 & 0.8334 & 0.8632  \\ \hline
+GRU                                    & 0.7625 & 0.5511 & 0.5814 & 0.8706 & 0.8459 &	0.6436 & 0.7155 & 0.8764 \\ \hline
+BiLSTM                                 & 0.7259 & 0.5182 & 0.5269 & 0.8895 & 0.8075 &	0.6652 & 0.6521 & 0.8808 \\ \hline
+TCN                                    & 0.6644	& 0.5442 & 0.4785 & 0.9096 & 0.8938 & 0.7090 & 0.7989	& 0.9030 \\ \hline
+TRA                                    & 0.5500 & 0.4242 & 0.3025 & 0.9226 & 0.7144 &	0.5235 & 0.5103 & 0.9167  \\ \hline
+REF                                    & 0.4725 & 0.3521 & 0.2232 & 0.9294 & 0.5852 &	0.4421 & 0.3424 & 0.9221  \\ \hline
+ICEEMDAN-ANN                           & 1.1108 & 0.8641 & 1.2339 & 0.7388 & 1.1857 & 0.9546 & 1.4060 & 0.7741  \\ \hline
+ICEEMDAN-CNN                           & 0.6166 & 0.4481 & 0.3802 & 0.9207 & 0.7601 &	0.6021 & 0.5778 & 0.9018   \\ \hline
+ICEEMDAN-LSTM                          & 0.6661 & 0.4831 & 0.4436 & 0.9071 & 0.8457 &	0.6704 & 0.7152 & 0.9027 \\ \hline
+ICEEMDAN-GRU                           & 0.5916	& 0.4555 & 0.3500 & 0.9249 & 0.6540 &	0.5237 & 0.4277	& 0.9360  \\ \hline
+ICEEMDAN-BiLSTM                        & 0.6005	& 0.4736 & 0.3606 & 0.9204 & 0.8020 &	0.6611 & 0.6432	& 0.9047  \\ \hline
+ICEEMDAN-TCN                           & 0.5006	& 0.3841 & 0.2506 & 0.9308 & 0.5817 &	0.4765 & 0.3384 & 0.9208  \\ \hline
+ICEEMDAN-TRA                              & 0.4470 & 0.3464 & 0.1998 & 0.9616 & 0.4895 & 0.3776 & 0.2396 & 0.9596  \\ \hline
+\textbf{Proposed Approach}                             & \textbf{0.3704} & \textbf{0.2940} & \textbf{0.1372} & \textbf{0.9709} & \textbf{0.3839}& \textbf{0.3083} & \textbf{0.1474} & \textbf{0.9702}  \\ \hline
+\end{tabular}}
+\end{table}
+
+
+\begin{figure}
+\centering
+\includegraphics[width= \columnwidth]{Figures/RF_Gulf_Proposed.png}
+\caption{Prediction result of proposed ICEEMDAN-REF model and other hybrid models at wind farm 2}
+\label{ref_f6}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{Figures/RF_Gulf_Error_Proposed.png}
+\caption{Comparison of forecasting error of wind speed: ICEEMDAN-REF and other reference models for wind farm 2}
+\label{ref_f7}
+\end{figure}
+
+
+\begin{table}
+\centering
+\caption{Percentage improvement of ICEEMDAN-REF model relative to all the reference hybrid models for all time horizons at wind farm 2}
+\label{ref_t6}
+\scalebox{0.98}{
+\begin{tabular}{|l|ccc|ccc|}
+\hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{5 mins}}         & \multicolumn{3}{c|}{\textbf{15 mins}}          \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 70\%          & 75\%         & 91\%         & 61\%          & 60\%         & 85\%            \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 66\%          & 68\%         & 88\%         & 45\%          & 40\%         & 70\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 61\%          & 64\%         & 85\%         & 47\%          & 47\%         & 72\%             \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     &62\%          & 66\%         & 86\%         & 51\%          & 49\%         & 76\%           \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 57\%          & 59\%         & 82\%         & 47\%          & 46\%         & 72\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 56\%          & 61\%         & 81\%         & 36\%          & 28\%         & 58\%                \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TRA}                     & 35\%          & 45\%         & 58\%         & 20\%          & 20\%         & 36\%                \\ \hline
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{30 mins}}         & \multicolumn{3}{c|}{\textbf{1 hour}}        \\ \cline{2-7}
+\multicolumn{1}{|c|}{}                                & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} & \textbf{RMSE} & \textbf{MAE} & \textbf{MSE} \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-ANN}                  & 67\%          & 66\%         & 89\%         & 68\%          & 68\%         & 90\%          \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-CNN}                    & 40\%          & 34\%         & 64\%         & 49\%          & 49\%         & 74\%     \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-LSTM}                     & 44\%          & 39\%         & 69\%         & 55\%          & 54\%         & 79\%        \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-GRU}                     & 37\%          & 35\%         & 61\%         & 41\%          & 41\%         & 66\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-BiLSTM}                     & 38\%          & 38\%         & 62\%         & 52\%          & 53\%         & 77\%         \\ \hline
+\textbf{Proposed   Vs ICEEMDAN-TCN}                     & 26\%          & 23\%         & 45\%         & 34\%          & 35\%         & 56\%             \\ \hline   
+\textbf{Proposed   Vs ICEEMDAN-TRA}                     & 17\%          & 15\%         & 31\%         & 22\%          & 18\%         & 38\%             \\ \hline 
+\end{tabular}}
+\end{table}
+
+
+Table \ref{ref_t5} presents the prediction results of the REF model alongside other individual models at wind farm 2. The REF model demonstrates superior performance, achieving lower RMSE, MAE, and MSE values compared to the other individual models. Specifically, the RMSE values for the REF model are 0.2252 at the 5-min horizon, 0.4524 at the 15-min horizon, 0.4725 at the 30-min horizon, and 0.5852 at the 1-hour horizon. Similarly, the obtained MAE values for the REF model are 0.1658 at the 5-min WSF, 0.3153 at the 15- min WSF, 0.3521 at the 30-min WSF, 0.4421 at the 1-hour WSF.  The study results indicate that the REF model outperforms the TRA model, which ranks as the second-best individual model. At wind farm 2, the REF model surpasses the TRA model in terms of MSE by around 35\% for 5-min, 22\% for 15-min, 26\% for 30-min, and 33\% for 1-hour ahead WSF. All time intervals have shown that the REF model outperforms the other models. However, the efficiency of other models depreciate rapidly from 5-min to 1-hour ahead WSF. At the same time, the REF model consistently outperforms the TRA model and other comparative models and exhibits significant improvement over it. A comparative analysis of the $R^2$ scores at wind farm 2 is also revealed that the performance of REF model is better than the remaining individual models. The results indicate that the $R^2$ score consistently exceeds 0.92 across all time intervals. However, the efficacy can be enhanced by combining the REF model with the ICEEMDAN technique.
+
+The hybridised variations of the various models and the ICEEMDAN-REF model are compared in this part of study. Figure \ref{ref_f7} illustrates the forecasting errors of all the models at wind farm 2. And Figure \ref{ref_f6} illustrates the performance of proposed model along with other hybrid model predictions. The ICEEMDAN approach clearly improves the performance of hybrid models as compared to their individual counterparts, as seen in Table \ref{ref_t5}. While all hybrid models performed better, their consistency across all time intervals is not consistent. Furthermore, in terms of error metrics, the ICEEMDAN-TRA model ranked as the second-best performer as compared to remaining hybrid models. However, ICEEMDAN-REF model remained superior over all time intervals. The RMSE values obtained for these intervals are 0.1404, 0.3292, 0.3704, and 0.3839, respectively. The MAE values for wind farm 2 have been computed for all time intervals. These values are 0.1006, 0.2560, 0.2940, and 0.3083.    
+
+
+The proposed ICEEMDAN-REF model demonstrates clear superiority over other hybrid models, as evidenced by a significant reduction in MSE at wind farm 2. For example, the ICEEMDAN-REF model achieves significant improvement in the WSF performance, surpassing the second-best hybrid model, ICEEMDAN-TRA, by good margins: 58\% for 5-min, 36\% for 15-min, 31\% for 30-min, and 38\% for 1-hour. Similarly, the ICEEMDAN-REF model significantly enhances performance compared to its individual version i.e. REF model, achieving reductions in MSE of 61\% for 5-min, 47\% for 15-min, 39\% for 30-min, and 57\% for 1-hour. In terms of $R^2$ scores, the ICEEMDAN-REF model consistently outperforms all other hybrid models, maintaining $R^2$ scores greater than 0.97 across all time intervals at wind farm 2.  The percentage improvements of the ICEEMDAN-REF model compared to all other models at wind farm 2 are detailed in Table \ref{ref_t6}. 
+
+The analysis of Figure \ref{ref_f7} underscores the accuracy of the proposed ICEEMDAN-REF model in replicating wind speed values closely aligned with the original data, affirming its strong capabilities in WSF. Similarly, in Figure \ref{ref_f6} comparative models exhibit noticeable deviations from the actual wind speeds, further highlighting the superior WSF efficiency of the ICEEMDAN-REF hybrid model. However, as demonstrated by the data in Tables \ref{ref_t5} and \ref{ref_t6}, the proposed approach for WSF maintains its efficacy even with longer time intervals. The proposed ICEEMDAN-REF model consistently outperforms other models across different time intervals, demonstrating its reliability and effectiveness even as non-linearity increases.
+
+
+\section{Summary}
+In this chapter, a novel and hybrid ICEEMDAN-REF model for WSF is proposed by integrating ICEEMDAN and REF model. The ICEEMDAN algorithm is utilized for denoising the available wind speed data, and then the denoised data is passed for the prediction using REF model. The analytical results demonstrated the proposed ICEEMDAN-REF model produced the reliable WSF results. Two experimental studies have been performed to assess the efficacy of the proposed ICEEMDAN-REF model for WSF at 5-min, 15-min, 30-min, and 1-hour intervals. This experiment evaluates the performance of two groups of WSF models and compares their results with the proposed ICEEMDAN-REF model. These results reveal that the proposed model delivers superior results, achieving a statistically significant improvement over the other models. Hence, the proposed ICEEMDAN-REF model possesses the capability to aid power system operators to achieve the optimum balance among demand and generation within the modern power system. The hybrid prediction model provided exhibits versatility and suitability for various forecasting application scenarios, thereby enhancing efficiency. 

@@ -1,0 +1,358 @@
+\chapter{Literature Review} \label{sec:background}
+
+\fancyhead[LE,LO]{\textit{\chaptername \ \thechapter : Literature Review}}
+%\fancyhead[RE,LO]{Guides and tutorials}
+\fancyfoot[LE,LO]{\textit{NIT Andhra Pradesh}}
+\fancyfoot[CE,CO]{\thepage}
+\fancyfoot[RE,RO]{\textit{Dept.Electrical Engg.}}
+
+\label{sec:2}
+In this chapter, a detailed literature review on the different research works on wind speed forecasting (WSF) is presented. Additionally, the evaluation metrics used for validating the the WSF is also presented. From the literature review, different challenges and motivations are identified. These motivations helped in the derivation of the objectives and contributions of this thesis. Finally the organization of the thesis is presented.
+\section{Introduction}
+In this chapter, a detailed literature review on different research works on the WSF are presented. The chapter begins by categorizing forecasting techniques according to their respective time horizons. The existing methods for WSF are then thoroughly reviewed, with an emphasis on the advantages and disadvantages of each model. The chapter also addresses the limitations identified in existing literature and underscores the motivation for proposed research works in WSF. Finally, the chapter outlines the contributions of this study.
+
+\section{Time scale classification}
+WSF methods are categorized into four types based upon the time-horizon  \cite{intro12, intro9}. Details and applications of different types of WSF models based on the time scale are provided in the Table \ref{T1} and Figure \ref{fig2}.
+
+\begin{figure}[hbtp]
+    \centering
+    \includegraphics{Figures/Classification_time.png}
+    \caption{Timescale-based classification of WSF methodologies}
+    \label{fig2}
+\end{figure}
+
+
+\begin{table}[]
+\centering
+\caption{Wind forecasting time-scales and applications}
+\label{T1}
+\begin{tabular}{|l|c|l|}
+\hline
+\multicolumn{1}{|c|}{\textbf{Time-scale}} & \textbf{Range}                            & \multicolumn{1}{c|}{\textbf{Applications}}               \\ \hline
+\multirow{2}{*}{Very short-term}          & \multirow{2}{*}{Few Secs to 30-min ahead} & ·       Voltage   regulation actions                     \\ \cline{3-3} 
+                                          &                                           & ·       Operations related to grid stability             \\ \hline
+\multirow{3}{*}{Short-term}               & \multirow{3}{*}{30-min to 6-hr ahead}     & ·       Decisions   on increasing or decreasing the load \\ \cline{3-3} 
+                                          &                                           & ·       Planning for economical load dispatch            \\ \cline{3-3} 
+                                          &                                           & ·       Managing power reserves                          \\ \hline
+\multirow{2}{*}{Medium-term}              & \multirow{2}{*}{6-hr to 1-day ahead}      & ·       Safety   of operations in the power market       \\ \cline{3-3} 
+                                          &                                           & ·       Decisions on Generator Status (Online/Offline)   \\ \hline
+\multirow{2}{*}{Long-term}                & \multirow{2}{*}{1-day to 1-week ahead}    & ·       Scheduling   for maintenance                     \\ \cline{3-3} 
+                                          &                                           & ·       Unit commitment decisions                        \\ \hline
+\end{tabular}
+\end{table}
+
+
+
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width = 6 in]{Figures/Classification.png}
+    \caption{Classification of WSF methods}
+    \label{fig1}
+\end{figure}
+
+\section{Methods of forecasting}
+Various methodologies for WSF  have been developed and utilized as shown in the Figure \ref{fig1}. They can be categorized into distinct subgroups based on modelling principles. Hence, WSF models can be divided into four different types: 
+\begin{enumerate}
+    \item Physical models
+    \item Statistical models
+    \item Artificial Intelligence (AI) models
+    \item Hybrid models
+\end{enumerate}
+
+\subsection{Physical models}
+Persistence model is a simple standard model widely employed in WSF. It makes the assumption that the wind speed value for the next instance will be the same as the the previous timestep instance \cite{p1}. However, this model tends to exhibit increased error values as the forecasting time horizon extends. The physical method relies on parametrization and utilizes historical meteorological data, including wind speed, wind direction, temperature, pressure, humidity, surface roughness, and obstacles \cite{p2}. NWP is a state of the art model in the physical models \cite{p3}. By assimilating the meteorological data, physical methods establish boundary conditions for mathematical models, allowing for the WSF and other meteorological parameters. WRF is also one of the physical model which widely uses mesoscale numerical weather prediction system \cite{p4}. It is highly versatile, allowing researchers to simulate a wide range of atmospheric phenomena, including wind patterns, precipitation, temperature, and atmospheric dynamics, at high resolution and over various spatial and temporal scales. WRF incorporates advanced numerical techniques and parameterizations to represent atmospheric processes accurately. The main aim of these models is to utilize inputs from NWP systems, which provide detailed meteorological data and perform the WSF. Prediktor, for instance, is a physical model which relies on NWP inputs and employs complex mathematical modeling techniques to simulate wind patterns and predict wind speeds over various time horizons \cite{p5}. Similarly, Previento, LocalPred, and HIRPOM are other examples of physical models that utilize NWP inputs for WSF \cite{p6}. These models may differ in their specific methodologies and parameterizations but share the common approach of simulating atmospheric processes based on physical principles. However, these physical approaches demand a substantial amount of processing power and execution time because of the mathematical models involved. As a result, they are generally more suitable for medium-term and long-term WSF where the trade-off between computational cost and forecast accuracy is acceptable. Table \ref{literature_physical} provides description of proposed physical approaches from the literature.
+
+\begin{table}
+\centering
+\caption{Literature survey: Physical models}
+\scalebox{0.9}{
+\label{literature_physical}
+\begin{tabular}{p{0.05\textwidth}p{0.45\textwidth}p{0.45\textwidth}}
+\hline
+	Ref.	& Approach	& Key features \\
+\hline
+ \cite{t1}   & NWP wind speed correction model & Proposed power prediction idea reduces the RMSE and MAE on average 5.93\% and 4.82\%. \\
+   \hline
+ \cite{t2} & Novel WSF method based on Gaussian Process & WSF performance improved for short term and long-term intervals. \\
+\hline
+\end{tabular}}
+\end{table}
+
+
+
+
+\subsection{Statistical models}
+Statistical forecasting models represent a significant improvement over physical methods in WSF, because of not relying on computations and uses the past time series data. While physical methods rely on parametrization and complex mathematical modeling based on fluid dynamics and meteorology, statistical models leverage historical data to extract patterns and trends in wind speed variations. They encompass various techniques that include AR, MA, ARMA, ARIMA, and NARX which are widely used in time series analysis. For instance, in \cite{s1,s2}, the authors introduced a PAR for day-ahead WSF, demonstrating its superiority over other comparative models. Similarly, in \cite{s3}, a hybrid approach combining univariate ARIMA and multivariate NARX models was employed for WSF prediction. Another study \cite{s4} proposed an enhanced version of ARIMA, known as f-ARIMA, for day-ahead WSF forecasting. Additionally, Kalman filters were utilized in WSF, as detailed in \cite{s5,s7,s8}, with authors claiming improved performance through their integration. Summary of different statistical models proposed is provided in the Table \ref{literature_statistical}.
+
+
+
+
+\begin{table}
+\centering
+\caption{Literature survey: Statistical models}
+\scalebox{0.9}{
+\label{literature_statistical}
+\begin{tabular}{p{0.05\textwidth}p{0.45\textwidth}p{0.45\textwidth}}
+\hline
+	Ref.	& Approach	& Key features \\
+\hline
+ \cite{t3} & WSF using ARIMA Fourier time series model & Achieved better performance than standard ARIMA \\
+  \hline
+ \cite{t4} & Evaluation of WSF using ARIMA and SARIMA methods & ARIMA (1,1,1) achieved best performance with MSE of 6.72465 \\
+ \hline
+ \cite{t5} & SARIMA model for hourly ahead WSF & Achieved better performance than GRU and LSTM \\
+\hline
+\end{tabular}}
+\end{table}
+
+Following are the demerits from the literature of statistical models:
+\begin{itemize}
+    \item However, despite the advantages of statistical models in handling stationary sequences and simple linear relationships, they encounter limitations when working with the highly nonlinear characteristics of the wind speed data. 
+    \item Consequently, the predictive accuracy of these models may diminish, particularly when forecasting over extended timeframes or in regions characterized by highly erratic wind patterns. 
+\end{itemize}
+
+
+\subsection{AI models}
+AI techniques are gaining popularity for WSF because of their intelligence to handle huge nonlinear data \cite{a1}. This adaptability makes them a top choice for accurate WSF, outperforming statistical models. Within AI, ML and DL models are prominent categories. ML encompasses a range of models, including SVR, DT-based models like RF, GBM, and K-KNN. For example, in \cite{a2} authors employed state space SVR model for the WSF. Similarly, in \cite{a3,a4}, authors used SVR as the predictor by utilizing other supporting modules for the WSF. Similar to the SVR, authors in \cite{a5, a6, a7} utilized other ML models for the WSF. However, there are limitations of these ML models as given below:
+\begin{itemize}
+    \item ML models face limitations in representation capacity and struggle with effectively handling high-dimensional data.
+    \item Face challenges when dealing with the highly non-linear wind speed data.
+\end{itemize}
+
+As a result, the researchers have turned their focus to DL models for WSF. DL models learn patterns directly from raw data, removing the need for manual feature engineering. Using interconnected layers of neurons, they capture wind dynamics accurately. DL scales well to large datasets and benefits from computational advances, making it ideal for WSF challenges.
+ANN, BPNN, ELM are some of the standard neural networks utilized for WSF \cite{a9}. For example, in \cite{a8}, authors utilized ANN for the WSF in mountainous region of India. However, the performance of these models can be limited due to the absence of a memory element. Standard neural network architectures lack the intrinsic capability to retain and utilize information from previous time steps during the prediction process. Consequently, they may encounter challenges in capturing temporal features and long-term features present in wind speed time series data effectively. Hence, RNNs have been developed specifically to address this limitation. RNNs are well suited for processing time sequence data, like wind speed data, since they predict output based on the temporal features of the data.
+
+
+In addressing data dependencies, RNNs have been extensively utilized, leveraging the cell's hidden states to transfer information across various time steps. In \cite{a10}, authors conducted a comparison of ARIMA with RNN model for WSF. The results indicated that RNN outperformed ARIMA model. However, the inability of base RNNs to capture long-term temporal relationships in sequential data is limited by issues like vanishing and exploding gradients. LSTM and GRU that are advanced forms of the RNN are developed for addressing the issues with the RNN \cite{a11,a12,a13,a14}. Enhanced versions of LSTM, as proposed in \cite{a15}, and GRU models incorporating correlation analysis and hypothesis testing \cite{a16} have further refined WSF techniques. To further improve these models, bidirectional variants of the LSTM and GRU, capable of processing input sequences in both forward and backward orientations, have been proposed to improve prediction accuracy \cite{a17}. Furthermore, 1D CNNs have also proposed as effective models in WSF, leveraging spatial characteristics of the data for feature extraction \cite{a18}. To enhance performance further, RNN models combining spatial and temporal characteristics, such as TCN utilizing causal convolutions to expand receptive fields, have been introduced for time series prediction tasks. TCN address issues with standard convolutional layers, such as limited receptive fields. For example, in \cite{a19}, authors proposed TCN for the wind speed interval prediction. TCNs require more memory and computational power due to long input sequences and dilation mechanisms, while limited kernel sizes in sublayers restrict their receptive field and the temporal context.
+
+However, despite their utility, a notable drawback of RNN variants lies in their limited receptive field, constraining their potential to model long-term relationships and intricate patterns within wind speed data. To address this challenge, researchers have integrated attention layers into their models, allowing for focused attention on critical segments of the input sequence. However, to overcome the limitations associated with RNNs, a more robust solution has emerged in the form of Transformers \cite{a20}. Transformers rely solely on attention mechanisms, bypassing sequential processing limitations. Further research should be conducted to leverage the advantages of these attention based methodologies in the WSF domain.
+
+However, there are some limitations with the DL models such as:
+\begin{itemize}
+    \item The implementation of a single prediction model for the WSF is limited by the noise in the input wind speed data.
+    \item  DL models may suffer from overfitting when the training data does not adequately represent the variability and complexity of real-world wind speed patterns.
+    \item The computational resources required for training and deploying DL models especially RNN based models can be substantial.
+    \item The complex architecture and numerous hyperparameters of DL models require careful selection.
+\end{itemize}
+
+
+\subsection{Hybrid models}
+To address the challenges with the inherent noise present in the input data and the need for the optimal hyperparamter selection, hybrid models have been developed. There are two different categories in hybrid models: 1) Data denoising based models and 2) Parameter optimization based models
+
+\subsubsection{Data denoising based models} 
+In the WSF model training, providing adequate input data is necessary for ensuring effective training and enhancing the model's generalization capabilities. However, the noise in the input data can result in suboptimal training for the WSF model. Hence, many research works have been using the hybrid model using one decomposition module. Decomposing the noisy input signals into simpler frequency subseries using various algorithms makes it easier to denoise the data, enhancing the quality of the input for the WSF model.
+
+There are three major steps involved in these type of hybrid models such as:
+
+\begin{itemize}
+    \item[1]  \textbf{Decomposition:} The original signal is broken down into several subseries through a signal decomposition algorithm.
+    \item[2]  \textbf{Noise reduction:} The subseries with higher frequencies, which typically contain more noise, are removed. The remaining subseries are then aggregated to form a noiseless signal.
+    \item[3] \textbf{Forecasting:} This refined signal is used for WSF.    
+\end{itemize}
+
+
+In this phase, the decomposition technique selection is crucial since it affects the predictions' accuracy and the efficiency of wind speed feature extraction. Various decomposition techniques such as EMD, WT, and VMD have been widely adopted in recent studies. Since wind speed data is non-linear and non-stationary, hybrid models that use data decomposition have demonstrated notable increases in predicting accuracy. This approach not only enhances the precision of the forecasts but also provides a more robust framework for managing the inherent variability of wind speed \cite{hy1, hy2}. The following Table \ref{deco} provides description on various decomposition methods. 
+
+% Please add the following required packages to your document preamble:
+% \usepackage[normalem]{ulem}
+% \useunder{\uline}{\ul}{}
+\begin{table}[]
+\centering
+\caption{Description of standard decomposition methods}
+\label{deco}
+\begin{tabular}{p{0.05\textwidth}p{0.1\textwidth}p{0.7\textwidth}}
+\hline
+	Ref.	& Approach	& Key features \\                                    \hline
+\cite{a22} & EMD                & Decomposes a time series into a set of IMFs, each representing different frequency components of the original signal.      \\ \hline
+\cite{wt} & WT                     &  It is effective in capturing both frequency and location information, making it useful for analyzing transient features in wind speed data. \\ \hline
+\cite{t13} & HHT                      & HHT combines EMD and Hilbert spectral analysis to generate data based on the time-frequency representation.                                                          \\ \hline
+ \cite{t3}    & FT                       & Creates a sum of sine and cosine functions with varying frequencies from a time series. It works well for stationary data but can struggle with non-stationary signals.                                       \\ \hline
+ \cite{a25}  & VMD             & VMD is an improved version of EMD that decomposes a data into modes with specific spectral characteristics, offering improved robustness and accuracy over traditional EMD.                                                          \\ \hline                                       
+\cite{a13} & EEMD      & EEMD is an improvement to the EMD that addresses mode mixing issues by adding white noise to the data and averaging the decompositions over multiple trials.                                                                             \\ \hline
+\cite{a24}   & SSA                & SSA decomposes a time series into components by applying SVD to the trajectory matrix. It separates the signal into trend, oscillatory components, and noise.                                         \\ \hline
+\end{tabular}
+\end{table}
+
+
+
+
+Different hybrid models have been developed to improve the WSF performance by combining data decomposition techniques with DL models. For instance, the authors in \cite{a22} utilized EMD for data decomposition. However, these standard methods have their limitations. WT is sensitive to the choice of threshold, which can significantly impact its performance. EMD, on the other hand, suffers from the phenomenon of mode mixing, where different IMFs can become indistinguishable. To address these limitations, improved decomposition techniques such as EWT \cite{a23}, SSA \cite{a24}, VMD \cite{a25}, and EEMD \cite{a26} have been developed. Methods like VMD excel at handling nonlinear, non-stationary signals and extracting local features, but they can struggle with significant noise and be sensitive to outliers. To further improve upon these models, an advanced version known as CEEMDAN has been proposed for data decomposition. Several studies, such as \cite{a27, a28, a29}, have employed CEEMDAN as the decomposition module within various WSF frameworks. CEEMDAN has emerged as a prominent approach due to its robustness in handling non-stationary signals, making it particularly suitable for WSF. Summary of different hybrid decomposition methods is provided in the Table \ref{literature_hybrid}.
+
+
+Following are the demerits of the hybrid decomposition based models:
+\begin{itemize}
+    \item Despite its advantages, CEEMDAN also encounters challenges such as mode mixing, frequency aliasing, and residual noise, which can constrain its performance.
+    \item Inaccurate decomposition introduces errors and uncertainties into forecasting models.
+\end{itemize}
+
+
+
+\begin{table}
+\centering
+\caption{Literature survey: Data decomposition based models}
+\scalebox{0.85}{
+\label{literature_hybrid}
+\begin{tabular}{p{0.05\textwidth}p{0.45\textwidth}p{0.45\textwidth}}
+\hline
+	Ref.	& Approach	& Key features \\
+\hline
+\cite{t6} & A novel with EEMD, GRU, Crisscross optimization & Consistent performance for various test cases. \\
+\hline
+\cite{t7} & Hybrid model with EWT, ELM, and GRU for ultra-short WSF & It outperformed other models for 5 min and 15 min WSF. \\
+ \hline
+\cite{t8} & SAGWO-LSTM model for WSF and reconstruction approach & Achieved better performance than the baseline models  \\
+ \hline
+\cite{t9} & Hybrid model using CNN-LSTM model with CEEMDAN & Combining LSTM with CNN with CEEMDAN improved the denoising and feature extraction for WSF. \\
+  \hline
+\cite{t10} & Hybrid CNN-ECA-BIGRU model & Achieved dominating metrics with $R^2$ of 0.9948.  \\
+\hline
+\cite{t11} & Hybrid model using adaptive secondary decomposition and robust TCN model (ASD-RTCN) & ASD-RTCN model outperformed benchmark models consistently. \\
+ \hline
+\end{tabular}}
+\end{table}
+
+
+\subsubsection{Parameter optimization based models}
+
+As the neural network forms the core of the WSF framework, careful consideration of initial parameters is crucial. The initialization method of neural network parameters plays a pivotal role in shaping optimization outcomes. Effective parameter initialization can significantly enhance the success rate of model training. Conversely, inadequate initialization schemes not only impede network convergence but can also lead to gradient vanishing or explosion.
+
+Given the complexity of parameters in data decomposition methods and DL forecasting predictors, manual selection or trial-and-error approaches for parameter tuning often fail to yield optimal hyperparameter sets. Hence, there is a pressing need for parameter selection algorithms to automate this process and ensure precise parameter configurations for accurate WSF. Table \ref{optim} provides description of different optimization methods available.
+
+\begin{table}
+\centering
+\caption{Description of optimization methods}
+\label{optim}
+\begin{tabular}{p{0.05\textwidth}p{0.1\textwidth}p{0.7\textwidth}}
+\hline
+	Ref.	& Approach	& Key features \\                                    \hline
+ \cite{a30} & DE             & This is a stochastic optimization algorithm that operates on a population-based approach that iteratively improves candidate solutions by combining and mutating them according to differential operators.                                                                                \\ \hline
+ \cite{a31}   & PSO          & This technique inspired by the social behavior of bird flocking or fish schooling. It entails particles (solutions) moving across a search area to locate the best solution by updating their location depending on their individual best position and the best position discovered by the swarm.  \\ \hline
+
+ \cite{a32}  & WO         & This algorithm is inspired by the social behavior of humpback whales. It involves a population of solutions (whales) that search for optimal solutions by simulating the movement and behavior of whales in the ocean.                                                                       \\ \hline
+ \cite{a33}  & SCA          & This is inspired by the sine and cosine functions. It uses random variables and the sine and cosine functions to update candidate solutions iteratively for optimization.                                                          \\ \hline
+ \cite{a34} & GWO            & This is inspired by the social hierarchy and hunting behavior of grey wolves. It involves a population of grey wolves that mimic the leadership hierarchy and hunting behavior to search for the optimal solution in a search space                                                            \\ \hline
+\end{tabular}
+\end{table}
+
+To address this difficulty, several parameter selection models have been developed in the literature, as shown in Table \ref{literature_optim}. The aim is to identify the most suitable parameters by leveraging nature-driven optimization techniques that mimic the behavior and characteristics of natural processes or species.
+
+\begin{table}
+\centering
+\caption{Literature survey: Parameter selection based models}
+\scalebox{0.85}{
+\label{literature_optim}
+\begin{tabular}{p{0.05\textwidth}p{0.45\textwidth}p{0.45\textwidth}}
+\hline
+	Ref.	& Approach	& Key features \\
+\hline
+\cite{t12} & CEEMDAN-GWO-Bi-LSTM for wind power prediction & CEEMDAN-GWO-Bi-LSTM has higher accuracy and higher fitting in short-term wind power prediction.  \\
+  \hline
+\cite{t13} & Combined model using DBN-Elman and improved PSO-HHT & Prediction accuracy and stability are better than comparative models.  \\
+\hline
+\cite{de1} & Hybrid model based on GA-ANN improved by VMD & Achieved better metrics with combined use of GA and VMD \\
+\hline
+\cite{de2} & Hybrid model using TVFEMD, improved SC algorithm, CNN and BiLSTM & Achieved good metrics in all tested datasets \\
+\hline 
+\cite{de3} & Hybrid model using FEEMD-PE-SSA-BP & The results indicated that this model is not only fast but also very accurate. \\
+\hline
+\end{tabular}}
+\end{table}
+
+
+Following are the demerits of the parameter selection based hybrid methods:
+\begin{itemize}
+    \item Although these models are accessible, selecting the best optimization strategy remains difficult since it necessitates careful consideration of criteria such as problem complexity and dataset characteristics.
+    \item  The identification of a suitable optimization technique presents a significant challenge.
+\end{itemize}
+
+
+\section{Performance evaluation of WSF approaches}
+Enhancing renewable energy integration with the grid necessitates dependable and error-free forecasting approaches. Various indicators, such as MAE, RMSE, MSE, and $R^2$ score, are used to evaluate a model's performance. MAE measures the average absolute difference between predicted and observed values, providing a straightforward interpretation of prediction accuracy. Similarly, MSE penalizes larger errors more heavily than smaller ones by squaring the differences between predicted and actual values which helps in identifying the discrepancies in the predictions. On the other hand, RMSE calculates the square root of the average squared difference between predicted and observed values. By penalizing large errors more heavily than MAE, RMSE provides insight into the spread of residuals. Despite their differences, both metrics offer valuable insights into the accuracy of predictive models for WSF. Smaller error values indicate better models. 
+The coefficient of determination, often denoted as \( R^2 \), is a measure that indicates the proportion of the variance in the dependent variable that is predictable from the independent variable(s). A higher \( R^2 \) value indicates a better fit of the model to the data..
+
+
+\begin{equation}
+\text{RMSE}  = \sqrt{\frac{1}{m} \sum_{j=1}^{m} (x_j - \hat{x}_j)^2}
+\end{equation}
+
+\begin{equation}
+\text{MSE}  = \frac{1}{m} \sum_{j=1}^{m} (x_j - \hat{x}_j)^2
+\end{equation}
+
+\begin{equation}
+R^2 \text{ Score} = 1 - \frac{\sum_{j=1}^{m} (x_j - \hat{x}_j)^2}{\sum_{j=1}^{n} (x_j - \bar{x})^2}
+\end{equation}
+
+\begin{equation}
+\text{MAE} = \frac{1}{m} \sum_{j=1}^{m} |x_j - \hat{x}_j|
+\end{equation}
+
+$x_j$: actual value; $\hat{x_j}$: predicted value; m: total no. of data points; $\bar{x}$: mean of the data;
+
+
+
+\section{Motivation}
+Based on the current literature reviewed, the following key challenges are identified in WSF:
+
+\begin{itemize}
+    \item Integrating data decomposition-based models is essential for enhancing the performance of WSF. However, challenges arise with extended variants of ensemble empirical mode decomposition (EEMD), such as complete ensemble empirical mode decomposition with adaptive noise (CEEMDAN), due to issues like mode mixing, frequency aliasing, and residual noise. These problems lead to inaccurate decomposition of wind speed into intrinsic mode functions (IMFs), which in turn hampers the capture of true temporal characteristics, ultimately negatively affecting WSF performance
+    \item The forecasting of wind speed faces significant challenges due to the complexity involved in selecting appropriate models and feature extraction methods, which directly affect the effectiveness and accuracy of predictions. A notable trend in WSF is the reliance on  recurrent neural network (RNN)-based models, which, despite their popularity, they often fall short in capturing the intricate spatial and temporal dependencies inherent in wind speed patterns. Their limited receptive field, susceptibility to getting trapped in local minima during training, and long training times due to the dynamic nature of wind speed further hinder their effectiveness. These limitations prevent RNNs from fully modeling the complexities of wind speed dynamics, resulting in suboptimal forecasting performance.
+    \item  The performance of WSF models declines with longer forecasting time horizons, mainly due to the insufficient understanding and interpretation of wind speed features. Factors such as variability, temporal dependencies, and non-linear patterns become harder to capture accurately over time. This leads to increased uncertainty and reduced forecasting reliability.
+    \item Most of the existing literature on WSF focuses on point prediction models. However, wind speed interval predictions, which provide a range of possible wind speed values, offer a more comprehensive assessment of the uncertainty and variability in wind speed forecasts. Exploring and developing interval prediction models can significantly enhance the performance and reliability of WSF, allowing for more accurate and robust predictions.
+
+\end{itemize}
+
+
+\section{Research objectives}
+Based on the challenges identified in the literature, the following research objectives are proposed:
+\begin{itemize}
+    \item To develop and utilize a decomposition method to address the issues such as mode mixing, frequency aliasing, and residual noise, to improve the decomposition accuracy of wind speed data.
+    \item To develop a hybrid WSF model that overcomes the limitations of RNN variant models, by addressing their restricted receptive fields, enabling the model to capture broader spatial and temporal dependencies in wind speed data effectively. 
+    \item To develop a WSF model that maintains high performance across various time intervals, addressing the challenges of performance degradation with increasing time horizons, while ensuring control over computational complexity.
+    \item To develop an interval prediction model for WSF that provide a range of wind speed values, quantifying the uncertainty of forecasts under diverse conditions.
+\end{itemize}
+
+\section{Contributions}
+Based on the above limitations of the current WSF literature, various hybrid deep learning approaches have been developed for WSF. WSF methods are evaluated using datasets from two distinct wind farm locations: Block Island and the Gulf Coast - tested across four time horizons: 5-min, 15-min, 30-min, and 1-hour intervals.
+\begin{itemize}
+    \item The improved CEEMDAN (ICEEMDAN) method is proposed for the decomposition of original wind speed data because it reduces the number of trials while overcoming the problems that the CEEMDAN algorithm have such as mode-mixing, frequency aliasing, and residual noise. 
+    \item  A hybrid deep learning model is proposed for WSF which uses ICEEMDAN decomposition method for denoising the wind speed data, and transformer (TRA) network for the WSF. As the WSF models have a number of significant problems, including long training times, poor interpretation of complex and dynamic wind speed characteristics, limited receptive field, and being trapped in local minimum, the transformer network is developed for the WSF. It has a parallelized input structure, which enhances the model training, and ability to interpret more asynchronous relationships between dynamic and complex wind data sequences for the WSF. 
+    
+    \item The novel and hybrid methodology, data decomposition based reformer model is developed for WSF. The ICEEMDAN algorithm is employed to denoise wind speed data. A robust reformer (REF) model has been developed for prediction of wind speed efficiently. The proposed REF model is significantly more memory-efficient and exhibits faster processing times when handling long sequences in the WSF. This efficiency is achieved through the incorporation of locality-sensitive hashing (LSH) and reversible-residual layers.
+    
+    \item A novel and hybrid two stage methodology named ICEEMDAN-Autoformer is developed for accurate WSF. In the first stage, the ICEEMDAN algorithm is employed for denoising the original wind speed data. The autoformer (AF) model has been proposed as a predictor for WSF in the second stage. The architecture of AF includes an inner operator known as a series decomposition block. This operator enables the gradual aggregation of the long-term trend component from intermediate predictions. A proficient auto correlation (ACE) mechanism has been developed to expedite the identification of interrelationships and consolidation of data at the level of the series. 
+    
+    \item A novel hybrid ICEEMDAN-ATCN-BiLSTM approach is proposed by integrating the neural network architecture with ICEEMDAN.  Temporal convolutional network with attention mechanism (ATCN) extracts the important and dominating spatial and temporal features from the denoised wind speed. Bidirectional long short-term memor (BiLSTM) model interprets the important features bidirectionally to forecast the high-quality prediction intervals (PIs). The  integration of attention mechanism to the TCN layers enhance the feature extraction.
+\end{itemize}
+
+
+
+
+
+\section{Organization of thesis}
+The thesis is divided into seven major chapters which are outlined as follows:\\
+\textbf{Chapter 1 } provides a basic overview of the wind power scenario around the world. It emphasizes the importance of precise wind speed and wind power forecasting methodologies for better renewable energy integration and reliable power system operation. The subsequent section presents a bibliometric study according to the number of publications published between 2000 and 2023. 
+
+\textbf{Chapter 2} presents a detailed literature review on different research works on the WSF. The chapter begins by categorizing forecasting techniques according to their respective time horizons. The existing methods for WSF are then thoroughly reviewed, with an emphasis on the advantages and disadvantages of each model. The chapter also addresses the limitations identified in existing literature and underscores the motivation for proposed research works in WSF. Based on the motivations and objectives, the contributions of this thesis are provided. Finally, the thesis's structure is outlined.
+
+
+
+\textbf{Chapter 3} presents a novel and hybrid ICEEMDAN-Transformer model for the WSF. Section 1 outlines the motivations behind developing the ICEEMDAN-Transformer model for the WSF. Section 2 provides a demonstration of the operational principles of the hybrid ICEEMDAN-TRA methodology. Section 3 presents the experimental results using two case studies and evaluation conducted. Section 4 presents the conclusions of this research work. 
+
+
+\textbf{Chapter 4} presents a novel and hybrid ICEEMDAN-Reformer model for the WSF. Section 1 outlines the improvement area and motivations behind developing the ICEEMDAN-Reformer model for the WSF. Section 2 provides a demonstration of the operational principles of the hybrid ICEEMDAN-REF methodology proposed. Section 3 presents the experimental results using two case studies and evaluation conducted. The conclusions are presented in Section 4.
+
+
+\textbf{Chapter 5} presents a novel and hybrid ICEEMDAN-Autoformer model for the WSF. The motivations and contributions of this chapter are provided in the Section 1. Section 2 provides a demonstration of the operational principles of the hybrid ICEEMDAN-AF methodology proposed. Section 3 presents the experimental results using two case studies and evaluation conducted. Section 4 concludes with a summary of the findings.
+
+
+\textbf{Chapter 6} presents a novel and hybrid attention-based temporal convolutional bidirectional LSTM approach for WSIP. Section 1 offers a literature review of WSIP models and their limitations, which led to the development of this research work. Section 2 details the methodology of the proposed hybrid model. Section 3 presents the WSIP results and their evaluation, while Section 4 concludes the study.
+
+
+\textbf{Chapter 7} concludes the key outcomes of different research works presented in this thesis and provides suggestions for future research.
+
+
+\section{Summary}
+In this chapter, a comprehensive literature review of the proposed research work is presented. Firstly, forecasting techniques are categorized based on their respective time horizons. Following this, a detailed review of current approaches in the WSF domain is provided. Merits and demerits of the different models such as physical models, statistical models, AI models are discussed. Hybrid models that integrate data decomposition and parameter selection methods are also discussed for their potential in improving prediction accuracy. The chapter further examines limitations in current literature, such as computational demands and data variability, emphasizing the need for future research to optimize model performance and computational efficiency in WSF. Building on the challenges identified in the current literature, this chapter highlights the contributions of this thesis. Finally, the organization of the thesis is presented.
